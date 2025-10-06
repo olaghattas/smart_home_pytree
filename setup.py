@@ -20,6 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'charge_robot_tree = smart_home_pytree.charge_robot_tree:charge_robot_tree_main',
+            'move_to = smart_home_pytree.move_to:create_move_to_tree_main',
         ],
     },
 )
