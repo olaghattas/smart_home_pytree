@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 """
-This script is repsponsible for creating the charge robot tree.
+This script is repsponsible for creating the robot tree to move the robot to a location.
 
-The tree should check if the is charging and exit. else it moves the robot to home position then dock the robot and checks if it succcessfully charged. It will try for num_attempts then log if it fails
+The tree receives an (x,y) position and a quaternion representing the target pose for the robot. Before initiating movement, it checks whether the robot is currently charging and, if so, commands it to undock first.
 """
 
 import py_trees
@@ -25,11 +25,11 @@ from shr_msgs.action import DockingRequest
  
 ## todo: check if every tree needs to have the subscribers or one subscriber for all.
 ## todo: setup move to work correctly
-## how ot pass time for move to header, shoud we pass node 
+## how to pass time for move to header, shoud we pass node 
+
 def create_move_to_tree(x=0,y=0,quat=0) -> py_trees.behaviour.Behaviour:
     """
-    Create a basic tree and start a 'Topics2BB' work sequence that
-    will become responsible for data gathering behaviours.
+    Create a basic tree and start 
 
     Returns:
         the root of the tree
@@ -81,13 +81,80 @@ def create_move_to_tree(x=0,y=0,quat=0) -> py_trees.behaviour.Behaviour:
     root.add_child(move_to_position)
     return root
 
+'''
+
+Same as the one above but includes theh subscription tree so i can run alone
+
+'''
+
+from .subscription_tree import create_subscription_tree
+
+def create_standalone_move_to_tree(x=0,y=0,quat=0) -> py_trees.behaviour.Behaviour:
+    """
+    Create a basic tree and start a 'Topics2BB' work sequence that
+    will become responsible for data gathering behaviours.
+
+    Returns:
+        the root of the tree
+    """
+    
+    root = py_trees.composites.Sequence(name="MoveTo", memory=False)
+    
+    topics2bb = create_subscription_tree()
+    root.add_child(topics2bb)
+    
+    # Already charging check
+    ## fallback
+    ## if charging undock 
+    undocking_selector = py_trees.composites.Selector(name="undocking_selector", memory=False)
+    not_charging_status = py_trees.behaviours.CheckBlackboardVariableValue(
+        name="Charging_Status",
+        check=py_trees.common.ComparisonExpression(
+            variable="charging",
+            value=False,
+            operator=operator.eq
+        )
+    )
+
+    undocking_goal = DockingRequest.Goal()
+    undock_robot = py_trees_ros.actions.ActionClient(
+        name="Undock_Robot",
+        action_type=DockingRequest,
+        action_name="undock",
+        action_goal=undocking_goal,
+        wait_for_server_timeout_sec=120.0
+    )
+    
+    root.add_child(undocking_selector)
+    undocking_selector.add_children([not_charging_status, undock_robot])
+    
+    # Move to home action
+    # pose_goal = PoseStamped()
+    # pose_goal.header.frame_id = 'map'
+    # pose_goal.pose.position.x = x
+    # pose_goal.pose.position.y = y
+    # pose_goal.pose.orientation = quat
+
+    # move_to_position = py_trees_ros.actions.ActionClient(
+    #     name="Move_to_Pose",
+    #     action_type=NavigateToPose,
+    #     action_name="navigate_to_pose",
+    #     action_goal=NavigateToPose.Goal(pose=pose_goal),
+    #     wait_for_server_timeout_sec=120.0
+    # )
+    
+    move_to_position = py_trees.behaviours.Success(name="Move_to_Pose_Success")  # Placeholder for actual move action
+    root.add_child(move_to_position)
+    return root
+
 
 def create_move_to_tree_main():
     """
     Entry point for the script.
     """
     rclpy.init(args=None)
-    root = create_move_to_tree()
+    root = create_standalone_move_to_tree()
+    
     tree = py_trees_ros.trees.BehaviourTree(
         root=root,
         unicode_tree_debug=True

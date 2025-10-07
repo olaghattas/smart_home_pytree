@@ -15,7 +15,17 @@ import sys
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Bool
 import operator
-from .move_to import create_move_to_tree
+from .move_to_tree import create_move_to_tree
+from .subscription_tree import create_subscription_tree
+
+## A failure case but should be solved when using robot interface
+# : 0 failure from 3]
+#             {-} Charge Sequence [*]
+#                 [-] MoveTo [*]
+#                     [o] undocking_selector [*]
+#                         --> Charging_Status [✕] -- key 'charging' does not yet exist on the blackboard
+#                         --> Undock_Robot [*] -- sent goal request
+
 
 ## todo: check if every tree needs to have the subscribers or one subscriber for all.
 def create_charge_robot_tree(num_attempts: int = 3) -> py_trees.behaviour.Behaviour:
@@ -35,16 +45,18 @@ def create_charge_robot_tree(num_attempts: int = 3) -> py_trees.behaviour.Behavi
     )
     
     # --- Subscriptions to Blackboard ---
-    topics2bb = py_trees.composites.Sequence(name="Topics2BB", memory=True)
-    charging2bb = py_trees_ros.subscribers.ToBlackboard(
-        name="Charging2BB",
-        topic_name="/charging",
-        topic_type=Bool,
-        blackboard_variables={"charging": "data"},
-        qos_profile=py_trees_ros.utilities.qos_profile_unlatched()
-    )
+    topics2bb = create_subscription_tree()
+    
+    # topics2bb = py_trees.composites.Sequence(name="Topics2BB", memory=True)
+    # charging2bb = py_trees_ros.subscribers.ToBlackboard(
+    #     name="Charging2BB",
+    #     topic_name="/charging",
+    #     topic_type=Bool,
+    #     blackboard_variables={"charging": "data"},
+    #     qos_profile=py_trees_ros.utilities.qos_profile_unlatched()
+    # )
     root.add_child(topics2bb)
-    topics2bb.add_child(charging2bb)
+    # topics2bb.add_child(charging2bb)
     
     # --- Task Selector Equivalent to Fallback---
     charge_robot = py_trees.composites.Selector(name="Tasks", memory=False)
