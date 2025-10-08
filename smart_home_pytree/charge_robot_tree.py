@@ -17,6 +17,7 @@ from std_msgs.msg import Bool
 import operator
 from .move_to_tree import create_move_to_tree
 from .subscription_tree import create_subscription_tree
+from .logging_behavior import LoggingBehavior
 
 ## A failure case but should be solved when using robot interface
 # : 0 failure from 3]
@@ -25,7 +26,6 @@ from .subscription_tree import create_subscription_tree
 #                     [o] undocking_selector [*]
 #                         --> Charging_Status [✕] -- key 'charging' does not yet exist on the blackboard
 #                         --> Undock_Robot [*] -- sent goal request
-
 
 ## todo: check if every tree needs to have the subscribers or one subscriber for all.
 def create_charge_robot_tree(num_attempts: int = 3) -> py_trees.behaviour.Behaviour:
@@ -47,19 +47,10 @@ def create_charge_robot_tree(num_attempts: int = 3) -> py_trees.behaviour.Behavi
     # --- Subscriptions to Blackboard ---
     topics2bb = create_subscription_tree()
     
-    # topics2bb = py_trees.composites.Sequence(name="Topics2BB", memory=True)
-    # charging2bb = py_trees_ros.subscribers.ToBlackboard(
-    #     name="Charging2BB",
-    #     topic_name="/charging",
-    #     topic_type=Bool,
-    #     blackboard_variables={"charging": "data"},
-    #     qos_profile=py_trees_ros.utilities.qos_profile_unlatched()
-    # )
     root.add_child(topics2bb)
-    # topics2bb.add_child(charging2bb)
     
     # --- Task Selector Equivalent to Fallback---
-    charge_robot = py_trees.composites.Selector(name="Tasks", memory=False)
+    charge_robot = py_trees.composites.Selector(name="Tasks", memory=True)
     root.add_child(charge_robot)
 
     # Already charging check
@@ -83,6 +74,8 @@ def create_charge_robot_tree(num_attempts: int = 3) -> py_trees.behaviour.Behavi
 
     ## takes position as input x, y , quat default 0 0 0 for now
     move_to_home = create_move_to_tree()
+    # move_to_home = py_trees.behaviours.Success(name="Move_to_Pose")  # Placeholder for actual move action
+
 
     # Dock robot action (empty goal)
     docking_goal = DockingRequest.Goal()
@@ -94,19 +87,25 @@ def create_charge_robot_tree(num_attempts: int = 3) -> py_trees.behaviour.Behavi
         wait_for_server_timeout_sec=120.0
     )
     
+    # dock_robot = py_trees.behaviours.Success(name="Dock_Robot")  # Placeholder for actual move action
+
+    
     ## has to be a behavior
     # # Logging behaviors
-    # log_message_success = console.loginfo(
-    #     "Charging sequence completed successfully"
-    # )
-    # log_message_fail = console.logerror(
-    #     "Failed to charge after retry attempts"
-    # )
+    # Logging behaviors
+    log_message_success = LoggingBehavior(
+        name="Log_Success",
+        message="Charging sequence completed successfully"
+    )
+
+    log_message_fail = LoggingBehavior(
+        name="Log_Fail",
+        message="Failed to charge after retry attempts"
+    )
 
     # Charge sequence
     charge_sequence = py_trees.composites.Sequence(name="Charge Sequence", memory=True)
-    # charge_sequence.add_children([move_to_home, dock_robot, charging_status, log_message_success])
-    charge_sequence.add_children([move_to_home, dock_robot, charging_status])
+    charge_sequence.add_children([move_to_home, dock_robot, charging_status, log_message_success])
 
     # Retry decorator around charge sequence
     charge_sequence_with_retry = py_trees.decorators.Retry(
@@ -116,8 +115,7 @@ def create_charge_robot_tree(num_attempts: int = 3) -> py_trees.behaviour.Behavi
     )
 
     # Final selector order: if already charging -> success, else run retry sequence, else log failure
-    charge_robot.add_children([charging_status_2, charge_sequence_with_retry])
-        # charge_robot.add_children([charging_status, charge_sequence_with_retry, log_message_fail])
+    charge_robot.add_children([charging_status_2, charge_sequence_with_retry, log_message_fail])
 
     return root
 

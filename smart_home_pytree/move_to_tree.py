@@ -12,11 +12,11 @@ from nav2_msgs.action import NavigateToPose
 import py_trees.console as console
 import rclpy
 import sys
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Quaternion
 from std_msgs.msg import Bool
 import operator
 from shr_msgs.action import DockingRequest
-
+import py_trees_ros_interfaces.action as py_trees_actions  # noqa
 # Root (Sequence)
 #  ├─ Charging Selector
 #  │   ├─ Check not charging
@@ -27,7 +27,8 @@ from shr_msgs.action import DockingRequest
 ## todo: setup move to work correctly
 ## how to pass time for move to header, shoud we pass node 
 
-def create_move_to_tree(x=0,y=0,quat=0) -> py_trees.behaviour.Behaviour:
+def create_move_to_tree(x: float = 0.0, y: float = 0.0,
+                  quat: Quaternion = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)) -> py_trees.behaviour.Behaviour:
     """
     Create a basic tree and start 
 
@@ -62,22 +63,21 @@ def create_move_to_tree(x=0,y=0,quat=0) -> py_trees.behaviour.Behaviour:
     root.add_child(undocking_selector)
     undocking_selector.add_children([not_charging_status, undock_robot])
     
-    # Move to home action
-    # pose_goal = PoseStamped()
-    # pose_goal.header.frame_id = 'map'
-    # pose_goal.pose.position.x = x
-    # pose_goal.pose.position.y = y
-    # pose_goal.pose.orientation = quat
-
-    # move_to_position = py_trees_ros.actions.ActionClient(
-    #     name="Move_to_Pose",
-    #     action_type=NavigateToPose,
-    #     action_name="navigate_to_pose",
-    #     action_goal=NavigateToPose.Goal(pose=pose_goal),
-    #     wait_for_server_timeout_sec=120.0
-    # )
+    # Move to position 
+    pose = PoseStamped()
+    pose.header.frame_id = 'map'
+    pose.pose.position.x = x
+    pose.pose.position.y = y
+    pose.pose.orientation = quat
+    move_to_position = py_trees_ros.actions.ActionClient(
+        name="Move_to_Pose",
+        action_type=NavigateToPose,
+        action_name="navigate_to_pose",
+        action_goal=NavigateToPose.Goal(pose=pose),
+        wait_for_server_timeout_sec=120.0
+    )
     
-    move_to_position = py_trees.behaviours.Success(name="Move_to_Pose_Success")  # Placeholder for actual move action
+    # move_to_position = py_trees.behaviours.Success(name="Move_to_Pose_Success")  # Placeholder for actual move action
     root.add_child(move_to_position)
     return root
 
@@ -89,7 +89,8 @@ Same as the one above but includes theh subscription tree so i can run alone
 
 from .subscription_tree import create_subscription_tree
 
-def create_standalone_move_to_tree(x=0,y=0,quat=0) -> py_trees.behaviour.Behaviour:
+def create_standalone_move_to_tree(x: float = -0.4, y: float = 0.5,
+                  quat: Quaternion = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)) -> py_trees.behaviour.Behaviour:
     """
     Create a basic tree and start a 'Topics2BB' work sequence that
     will become responsible for data gathering behaviours.
@@ -97,8 +98,8 @@ def create_standalone_move_to_tree(x=0,y=0,quat=0) -> py_trees.behaviour.Behavio
     Returns:
         the root of the tree
     """
-    
-    root = py_trees.composites.Sequence(name="MoveTo", memory=False)
+    ## has to be true for the client to wait
+    root = py_trees.composites.Sequence(name="MoveTo", memory=True)
     
     topics2bb = create_subscription_tree()
     root.add_child(topics2bb)
@@ -106,7 +107,9 @@ def create_standalone_move_to_tree(x=0,y=0,quat=0) -> py_trees.behaviour.Behavio
     # Already charging check
     ## fallback
     ## if charging undock 
-    undocking_selector = py_trees.composites.Selector(name="undocking_selector", memory=False)
+    undocking_selector = py_trees.composites.Selector(name="undocking_selector", memory=True)
+    # undocking_selector = py_trees.composites.Sequence(name="undocking_selector", memory=True)
+
     not_charging_status = py_trees.behaviours.CheckBlackboardVariableValue(
         name="Charging_Status",
         check=py_trees.common.ComparisonExpression(
@@ -115,35 +118,36 @@ def create_standalone_move_to_tree(x=0,y=0,quat=0) -> py_trees.behaviour.Behavio
             operator=operator.eq
         )
     )
-
-    undocking_goal = DockingRequest.Goal()
+    ## test
+    
+   
     undock_robot = py_trees_ros.actions.ActionClient(
         name="Undock_Robot",
         action_type=DockingRequest,
         action_name="undock",
-        action_goal=undocking_goal,
-        wait_for_server_timeout_sec=120.0
+        action_goal=DockingRequest.Goal(),
+        # wait_for_server_timeout_sec=120.0,
+        generate_feedback_message=lambda msg: "{:.2f}%%".format(msg.feedback.percentage_completed)
     )
     
     root.add_child(undocking_selector)
     undocking_selector.add_children([not_charging_status, undock_robot])
     
-    # Move to home action
-    # pose_goal = PoseStamped()
-    # pose_goal.header.frame_id = 'map'
-    # pose_goal.pose.position.x = x
-    # pose_goal.pose.position.y = y
-    # pose_goal.pose.orientation = quat
-
-    # move_to_position = py_trees_ros.actions.ActionClient(
-    #     name="Move_to_Pose",
-    #     action_type=NavigateToPose,
-    #     action_name="navigate_to_pose",
-    #     action_goal=NavigateToPose.Goal(pose=pose_goal),
-    #     wait_for_server_timeout_sec=120.0
-    # )
+    # Move to position 
+    pose = PoseStamped()
+    pose.header.frame_id = 'map'
+    pose.pose.position.x = x
+    pose.pose.position.y = y
+    pose.pose.orientation = quat
+    move_to_position = py_trees_ros.actions.ActionClient(
+        name="Move_to_Pose",
+        action_type=NavigateToPose,
+        action_name="navigate_to_pose",
+        action_goal=NavigateToPose.Goal(pose=pose),
+        wait_for_server_timeout_sec=120.0,
+    )
     
-    move_to_position = py_trees.behaviours.Success(name="Move_to_Pose_Success")  # Placeholder for actual move action
+    # move_to_position = py_trees.behaviours.Success(name="Move_to_Pose")  # Placeholder for actual move action
     root.add_child(move_to_position)
     return root
 

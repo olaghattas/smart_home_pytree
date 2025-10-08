@@ -4,61 +4,49 @@ from rclpy.node import Node
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 
 from shr_msgs.action import DockingRequest  # using as a placeholder action
+from generic_action_server import run_action_server, GenericActionServer
+from rclpy.executors import MultiThreadedExecutor
+import time
 
-
-class UnDockingActionServer(Node):
-
+class DockingActionServer(GenericActionServer):
     def __init__(self):
-        super().__init__('undocking_action_server')
+        super().__init__(DockingRequest, "undock")
 
-        self._action_server = ActionServer(
-            self,
-            DockingRequest,                     # action type
-            'undock',                     # action name
-            execute_callback=self.execute_callback,
-            goal_callback=self.goal_callback,
-            cancel_callback=self.cancel_callback
-        )
-        self.get_logger().info('Undocking action server is up and running.')
+    def execute_callback(self, goal_handle):
+        # Do the docking logic here
+        feedback = self._action_type.Feedback()
+        for i in range(100):
+            print("i",i)
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled()
+                return self._action_type.Result()
+            feedback.percentage_completed = float(i)
+            goal_handle.publish_feedback(feedback)
+        time.sleep(0.01)
+        goal_handle.succeed()
+        print(self._action_type.Result())
+        return self._action_type.Result()
+    
+  
+# ----------------------------
+# Use generic main to run the server
+# ----------------------------
+if __name__ == "__main__":
+    run_action_server(DockingActionServer)  
+    
+    
+## this works
+# if __name__ == "__main__":
+#      # Replace with your actual action
+#     rclpy.init()
 
-    def goal_callback(self, goal_request):
-        self.get_logger().info('Received undocking goal request')
-        return GoalResponse.ACCEPT
-
-    def cancel_callback(self, goal_handle):
-        self.get_logger().info('Received undocking cancel request')
-        return CancelResponse.ACCEPT
-
-    async def execute_callback(self, goal_handle):
-        self.get_logger().info('Executing undocking goal...')
-
-        # Ask user whether to succeed or fail
-        user_input = input("Undocking goal received. Type 'y' to succeed, 'n' to fail: ").strip().lower()
-
-        feedback_msg = DockingRequest.Feedback()
-
-        # Publish one feedback to show it's working
-        goal_handle.publish_feedback(feedback_msg)
-        self.get_logger().info('Feedback sent.')
-
-        if user_input == 'y':
-            goal_handle.succeed()
-            result = DockingRequest.Result()
-            self.get_logger().info('Docking succeeded.')
-            return result
-        else:
-            goal_handle.abort()
-            result = DockingRequest.Result()
-            self.get_logger().info('Docking failed.')
-            return result
-
-
-def main(args=None):
-    rclpy.init(args=args)
-    node = UnDockingActionServer()
-    rclpy.spin(node)
-    rclpy.shutdown()
-
-
-if __name__ == '__main__':
-    main()
+#     server = DockingActionServer()
+#     executor = MultiThreadedExecutor()
+#     try:
+#         executor.add_node(server)
+#         executor.spin()
+#     except KeyboardInterrupt:
+#         pass
+#     finally:
+#         server.shutdown()
+#         rclpy.try_shutdown()

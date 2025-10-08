@@ -35,6 +35,8 @@ py-trees-render -b smart_home_pytree.charge_robot_tree.charge_robot_tree_main
 
 
 
+py-trees-render -b smart_home_pytree.move_to_tree.create_move_to_tree_main
+
 
 ## Relevant documentation
 
