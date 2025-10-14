@@ -5,9 +5,7 @@ from rclpy.action import ActionServer, CancelResponse, GoalResponse
 
 from shr_msgs.action import DockingRequest  # using as a placeholder action
 
-
 class DockingActionServer(Node):
-
     def __init__(self):
         super().__init__('docking_action_server')
 
