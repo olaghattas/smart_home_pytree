@@ -35,9 +35,12 @@ py-trees-render -b smart_home_pytree.charge_robot_tree.charge_robot_tree_main
 
 
 
+
 py-trees-render -b smart_home_pytree.move_to_tree.create_move_to_tree_main
 
+## Video of running the tree
 
+[running_move_to_tree.webm](https://github.com/user-attachments/assets/70da4dc0-a3cc-47f9-82a3-99c17cc8f576)
 ## Relevant documentation
 
 https://py-trees-ros.readthedocs.io/en/devel/
