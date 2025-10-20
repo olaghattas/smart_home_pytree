@@ -1,0 +1,13 @@
+locations:
+  kitchen:
+    x: 1.2
+    y: 2.4
+    quat: [0.0, 0.0, 0.7, 0.7]
+  living_room:
+    x: -0.8
+    y: 1.1
+    quat: [0.0, 0.0, -0.3, 0.95]
+  bedroom:
+    x: 0.5
+    y: -1.2
+    quat: [0.0, 0.0, 1.0, 0.0]

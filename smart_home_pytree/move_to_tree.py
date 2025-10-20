@@ -225,6 +225,5 @@ def create_move_to_tree_main_continuous():
         print("Shutdown complete.")
 
 
-
 if __name__ == '__main__':
     create_move_to_tree_main()

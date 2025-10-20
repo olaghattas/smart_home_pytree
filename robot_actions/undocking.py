@@ -4,7 +4,7 @@ from rclpy.node import Node
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 
 from shr_msgs.action import DockingRequest  # using as a placeholder action
-from generic_action_server import run_action_server, GenericActionServer
+from .generic_action_server import run_action_server, GenericActionServer
 from rclpy.executors import MultiThreadedExecutor
 import time
 
@@ -28,6 +28,9 @@ class DockingActionServer(GenericActionServer):
         return self._action_type.Result()
     
   
+def main():
+    run_action_server(DockingActionServer)  
+    
 # ----------------------------
 # Use generic main to run the server
 # ----------------------------

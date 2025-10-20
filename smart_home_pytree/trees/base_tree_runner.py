@@ -1,0 +1,207 @@
+#!/usr/bin/env python3
+
+import py_trees
+import py_trees_ros.trees
+import py_trees.console as console
+import rclpy
+import sys
+from py_trees import display
+import os
+import signal
+import sys
+import psutil
+
+import launch
+import launch_ros.actions
+
+from smart_home_pytree.robot_interface import RobotInterface
+
+
+# to use the parametrs with a tree that inherits from this
+# MoveToLocationTree("move_to_tree", x=-0.56, y=0.60, quat=my_quat)
+# x = self.kwargs.get("x", -0.56)
+# y = self.kwargs.get("y", 0.60)
+# quat = self.kwargs.get("quat", Quaternion(x=0.0, y=0.0, z=0.0, w=1.0))
+
+## ignore kwargs for tree that dont need parameters
+
+## kwargs are for variables that are not related to the BaseTreeRunner but to he ones inheriting from it.
+
+### to run the action needed for the need to tirgger the call with run_actions true
+## run_simulator true to run the turtlebot simulator for the /navigate_to_pose
+
+import time 
+
+class BaseTreeRunner:
+    """
+    Base class for running behavior trees in a modular way.
+    Subclasses must override `create_tree()`.
+    """
+
+    def __init__(self, node_name: str, run_actions: bool = False, run_simulator: bool = False, **kwargs):
+        self.node_name = node_name
+        self.robot_interface = None
+        self.executor = None
+        self.tree = None
+        self.root = None
+        self.run_actions = run_actions
+        self.run_simulator = run_simulator 
+        self.kwargs = kwargs   # store extra args for flexibility
+        self.tb3_process = None
+        self.launch_service = None
+
+    
+    def required_actions(self) -> dict:
+        """
+        Subclasses can override this to define required actions.
+        Should return a dict in the form:
+            { "package_name": ["action1", "action2", ...] }
+        """
+        return {}
+    
+    def required_topics(self) -> list:
+        """
+        Subclasses can override this to define required topics.
+        Should return a list of topic names (strings).
+        """
+        return []
+    
+    def describe_requirements(self):
+        """
+        Prints required topics and actions.
+        Raises error if actions are required but not implemented when run_actions=True.
+        """
+        console.loginfo(console.bold + f"[{self.node_name}] Required resources:" + console.reset)
+
+        topics = self.required_topics()
+        actions = self.required_actions()
+
+        # --- Print topics ---
+        if topics:
+            console.loginfo("  • Topics:")
+            for t in topics:
+                console.loginfo(f"     - {t}")
+        else:
+            console.logwarn("  • No specific topics required.")
+
+        # --- Print actions ---
+        if actions:
+            console.loginfo("  • Actions:")
+            for pkg, nodes in actions.items():
+                for node in nodes:
+                    console.loginfo(f"     - {pkg}/{node}")
+        else:
+            if self.run_actions:
+                raise RuntimeError(
+                    f"[{self.node_name}] run_actions=True but no required actions defined!"
+                )
+            else:
+                console.logwarn("  • No specific actions required.")
+                
+    def create_tree(self, robot_interface) -> py_trees.behaviour.Behaviour:
+        """
+        Override this in subclasses to define the specific behavior tree.
+        """
+        raise NotImplementedError("Subclasses must implement create_tree()")
+
+    def setup(self):
+        """Initialize ROS2, executor, and build the behavior tree."""
+        self.describe_requirements()
+        
+        # if not rclpy.ok():
+        #     rclpy.init(args=None)
+        rclpy.init(args=None)
+        
+        if not self.run_simulator:
+            print("Simulator not launched. Make sure Nav2 is running to provide /navigate_to_pose action.")
+
+        
+        self.robot_interface = RobotInterface()
+
+        self.executor = rclpy.executors.MultiThreadedExecutor()
+        self.executor.add_node(self.robot_interface)
+
+        # Build the tree
+        self.root = self.create_tree(robot_interface=self.robot_interface)
+        self.tree = py_trees_ros.trees.BehaviourTree(
+            root=self.root,
+            unicode_tree_debug=True
+        )
+        
+        if self.run_actions:
+            print("action servers...")
+
+        try:
+            self.tree.setup(node_name=self.node_name, timeout=15.0)
+        except py_trees_ros.exceptions.TimedOutError as e:
+            console.logerror(f"Tree setup failed: {e}")
+            self.cleanup(exit_code=1)
+        except KeyboardInterrupt:
+            console.logerror("Tree setup interrupted.")
+            self.cleanup(exit_code=1)
+
+        self.executor.add_node(self.tree.node)
+
+    def run_until_done(self):
+        """Run until the tree finishes with SUCCESS or FAILURE."""
+        def tick_tree_until_done(timer):
+            self.tree.root.tick_once()
+            print("=" * 25 + " TREE STATE " + "=" * 25)
+            print(display.unicode_tree(root=self.tree.root, show_status=True))
+            print("\n")
+
+            if self.tree.root.status in [
+                py_trees.common.Status.SUCCESS,
+                py_trees.common.Status.FAILURE
+            ]:
+                console.loginfo(
+                    console.green +
+                    f"Tree finished with status: {self.tree.root.status}" +
+                    console.reset
+                )
+                timer.cancel()
+                rclpy.shutdown()
+
+        timer_period = 1.0
+        tree_timer = self.tree.node.create_timer(
+            timer_period,
+            lambda: tick_tree_until_done(tree_timer)
+        )
+
+        try:
+            self.executor.spin()            
+        except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+            console.logwarn("Executor interrupted.")
+        finally:
+            self.cleanup()
+
+    def run_continuous(self):
+        """Run the tree continuously until user stops."""
+        self.tree.tick_tock(period_ms=1000.0)
+        try:
+            self.executor.spin()
+        except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+            console.logwarn("Executor interrupted.")
+        finally:
+            self.cleanup()
+
+    def cleanup(self, exit_code=0):
+        """Clean shutdown of all nodes, executors, and subprocesses."""
+        try:
+            if self.tree:
+                self.tree.shutdown()
+
+            if self.executor:
+                self.executor.shutdown()
+
+            if self.robot_interface:
+                self.robot_interface.destroy_node()
+                
+            # Shutdown ROS2
+            rclpy.try_shutdown()
+
+        except Exception as e:
+            print(f"Cleanup failed: {e}")
+
+        finally:
+            sys.exit(exit_code)
