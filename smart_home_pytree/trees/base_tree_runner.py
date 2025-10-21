@@ -15,6 +15,7 @@ import launch
 import launch_ros.actions
 
 from smart_home_pytree.robot_interface import RobotInterface
+from smart_home_pytree.registry import load_locations_to_blackboard
 
 
 # to use the parametrs with a tree that inherits from this
@@ -27,7 +28,6 @@ from smart_home_pytree.robot_interface import RobotInterface
 
 ## kwargs are for variables that are not related to the BaseTreeRunner but to he ones inheriting from it.
 
-### to run the action needed for the need to tirgger the call with run_actions true
 ## run_simulator true to run the turtlebot simulator for the /navigate_to_pose
 
 import time 
@@ -38,17 +38,18 @@ class BaseTreeRunner:
     Subclasses must override `create_tree()`.
     """
 
-    def __init__(self, node_name: str, run_actions: bool = False, run_simulator: bool = False, **kwargs):
+    def __init__(self, node_name: str, **kwargs):
         self.node_name = node_name
         self.robot_interface = None
         self.executor = None
         self.tree = None
         self.root = None
-        self.run_actions = run_actions
-        self.run_simulator = run_simulator 
         self.kwargs = kwargs   # store extra args for flexibility
         self.tb3_process = None
         self.launch_service = None
+        yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
+
+        load_locations_to_blackboard(yaml_file_path)
 
     
     def required_actions(self) -> dict:
@@ -69,7 +70,6 @@ class BaseTreeRunner:
     def describe_requirements(self):
         """
         Prints required topics and actions.
-        Raises error if actions are required but not implemented when run_actions=True.
         """
         console.loginfo(console.bold + f"[{self.node_name}] Required resources:" + console.reset)
 
@@ -91,12 +91,7 @@ class BaseTreeRunner:
                 for node in nodes:
                     console.loginfo(f"     - {pkg}/{node}")
         else:
-            if self.run_actions:
-                raise RuntimeError(
-                    f"[{self.node_name}] run_actions=True but no required actions defined!"
-                )
-            else:
-                console.logwarn("  • No specific actions required.")
+            console.logwarn("  • No specific actions required.")
                 
     def create_tree(self, robot_interface) -> py_trees.behaviour.Behaviour:
         """
@@ -112,10 +107,6 @@ class BaseTreeRunner:
         #     rclpy.init(args=None)
         rclpy.init(args=None)
         
-        if not self.run_simulator:
-            print("Simulator not launched. Make sure Nav2 is running to provide /navigate_to_pose action.")
-
-        
         self.robot_interface = RobotInterface()
 
         self.executor = rclpy.executors.MultiThreadedExecutor()
@@ -127,9 +118,6 @@ class BaseTreeRunner:
             root=self.root,
             unicode_tree_debug=True
         )
-        
-        if self.run_actions:
-            print("action servers...")
 
         try:
             self.tree.setup(node_name=self.node_name, timeout=15.0)

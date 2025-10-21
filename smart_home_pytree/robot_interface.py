@@ -81,12 +81,21 @@ class RobotInterface(Node):
         
         self.state = RobotState()
         
+        self.robot_location = self.create_subscription(String, 'robot_location', self.robot_location_callback, 10)
+        self.person_location = self.create_subscription(String, 'person_location', self.person_location_callback, 10)
         self.charging_sub = self.create_subscription(Bool, 'charging', self.charging_callback, 10)
 
     def charging_callback(self, msg):
         self.state.update('charging', msg.data)
         self.get_logger().debug(f"Charging: {msg.data}")
-
+        
+    def robot_location_callback(self, msg):
+        self.state.update('robot_location', msg.data)
+        self.get_logger().debug(f"Person Location: {msg.data}")
+        
+    def person_location_callback(self, msg):
+        self.state.update('person_location', msg.data)
+        self.get_logger().debug(f"Person Location: {msg.data}")
 
 
 def main(args=None):

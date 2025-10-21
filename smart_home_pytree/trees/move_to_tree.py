@@ -8,7 +8,7 @@ The tree receives an (x,y) position and a quaternion representing the target pos
 
 import py_trees
 import py_trees_ros.trees
-from nav2_msgs.action import NavigateToPose
+
 import py_trees.console as console
 import rclpy
 import sys
@@ -16,19 +16,19 @@ from geometry_msgs.msg import PoseStamped, Quaternion
 from std_msgs.msg import Bool
 import operator
 from shr_msgs.action import DockingRequest
-import py_trees_ros_interfaces.action as py_trees_actions  # noqa
 
 from py_trees import display
 
 from smart_home_pytree.util_behaviors import CheckRobotStateKey, LoggingBehavior
 from smart_home_pytree.robot_interface import RobotInterface
 from smart_home_pytree.trees.base_tree_runner import BaseTreeRunner
+from smart_home_pytree.behaviors.move_to_bh import MoveToLandmark
 import argparse
 
 
 def required_actions_():
         return {
-            "smart_home_pytree": ["docking", "undocking"]
+            "smart_home_pytree": ["undocking"]
         }
         
 # Root (Sequence)
@@ -39,20 +39,16 @@ def required_actions_():
  
 ## todo register positions in blackboard
 class MoveToLocationTree(BaseTreeRunner):      
-    def __init__(self, node_name: str, run_actions: bool = False, run_simulator: bool = False, **kwargs):
+    def __init__(self, node_name: str, **kwargs):
         """
         Initialize the MoveToLocationTree.
 
         Args:
             node_name (str): name of the ROS node.
-            run_actions (bool): whether to check for and require actions.
-            run_simulator (bool): whether to enable simulation mode.
             **kwargs: extra arguments such as x, y, quat.
         """
         super().__init__(
             node_name=node_name,
-            run_actions=run_actions,
-            run_simulator=run_simulator,
             **kwargs
         )
 
@@ -64,18 +60,16 @@ class MoveToLocationTree(BaseTreeRunner):
         Returns:
             the root of the tree
         """
-        
-        x = self.kwargs.get("x", -0.56)
-        y = self.kwargs.get("y", 0.60)
-        quat = self.kwargs.get("quat", Quaternion(x=0.0, y=0.0, z=0.0, w=1.0))
+        # # Get the blackboard
+        # blackboard = py_trees.blackboard.Blackboard()
+       
+        location = self.kwargs.get("location", "")
+        location_key = self.kwargs.get("location_key", "person_location")
 
         root = py_trees.composites.Sequence(name="MoveTo", memory=True)
         
         state = robot_interface.state
         
-        # Already charging check
-        ## fallback
-        ## if charging undock 
         undocking_selector = py_trees.composites.Selector(name="undocking_selector", memory=True)
         
         not_charging_status = CheckRobotStateKey(
@@ -94,26 +88,11 @@ class MoveToLocationTree(BaseTreeRunner):
             action_goal=undocking_goal,
             wait_for_server_timeout_sec=120.0
         )   
-        
-        # if not undock_robot.client.wait_for_server(timeout_sec=10.0):
-        #     console.logerror("Undock action server not available.")
 
         root.add_child(undocking_selector)
         undocking_selector.add_children([not_charging_status, undock_robot])
             
-        # Move to position 
-        pose = PoseStamped()
-        pose.header.frame_id = 'map'
-        pose.pose.position.x = x
-        pose.pose.position.y = y
-        pose.pose.orientation = quat
-        move_to_position = py_trees_ros.actions.ActionClient(
-            name="Move_to_Pose",
-            action_type=NavigateToPose,
-            action_name="navigate_to_pose",
-            action_goal=NavigateToPose.Goal(pose=pose),
-            wait_for_server_timeout_sec=120.0
-        )
+        move_to_position = MoveToLandmark(state, robot_interface, location=location, location_key=location_key)
         
         # move_to_position = py_trees.behaviours.Success(name="Move_to_Pose_Success")  # Placeholder for actual move action
         root.add_child(move_to_position)
@@ -126,8 +105,7 @@ class MoveToLocationTree(BaseTreeRunner):
         return [
             "/charging"
         ]
-        
-        
+            
 def str2bool(v):
     return str(v).lower() in ('true', '1', 't', 'yes')
 
@@ -137,26 +115,16 @@ def main(args=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-
-    parser.add_argument('--run_simulator', type=str2bool, default=False, help="Launch TB3 simulator with Nav2")
-    parser.add_argument('--run_actions', type=str2bool, default=False, help="Launch docking/undocking action nodes")
-    parser.add_argument('--run_continuous', type=str2bool, default=False, help="Run tree continuously")
-    parser.add_argument("--x", type=float, default=0.0)
-    parser.add_argument("--y", type=float, default=0.0)
-    parser.add_argument("--qx", type=float, default=0.0)
-    parser.add_argument("--qy", type=float, default=0.0)
-    parser.add_argument("--qz", type=float, default=0.0)
-    parser.add_argument("--qw", type=float, default=1.0)
+    parser.add_argument('--run_continuous', type=str2bool, default=False, help="Run tree continuously (default: False)")
+    parser.add_argument("--location", type=str, default="", help="Target location name (from YAML)")
+    parser.add_argument("--location_key", type=str, default="person_location", help="key to use with blackboard")
 
     args, unknown = parser.parse_known_args()
 
-    target_quat = Quaternion(x=args.qx, y=args.qy, z=args.qz, w=args.qw)
-
     tree_runner = MoveToLocationTree(
         node_name="move_to_location_tree",
-        run_simulator=args.run_simulator,
-        run_actions=args.run_actions,
-        x=args.x, y=args.y, quat=target_quat
+        location=args.location,
+        location_key=args.location_key,
     )
     tree_runner.setup()
 
@@ -171,7 +139,10 @@ def main(args=None):
 
     rclpy.shutdown()
 
-
 if __name__ == "__main__":
     main()
+    
+    
+
   
+# python3 move_to_tree.py --location kitchen --run_actions True --run_simulator False --run_continuous False

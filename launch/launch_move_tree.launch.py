@@ -14,13 +14,8 @@ def generate_launch_description():
     run_simulator = LaunchConfiguration('run_simulator', default='false')
     run_actions = LaunchConfiguration('run_actions', default='false')
     run_continuous = LaunchConfiguration('run_continuous', default='false')
-    x = LaunchConfiguration('x', default='-0.56')
-    y = LaunchConfiguration('y', default='0.60')
-    qx = LaunchConfiguration('qx', default='0.0')
-    qy = LaunchConfiguration('qy', default='0.0')
-    qz = LaunchConfiguration('qz', default='0.0')
-    qw = LaunchConfiguration('qw', default='1.0')
-
+    location = LaunchConfiguration('location', default='living_room')
+   
     # Get required action nodes (these are already Node objects), 
     action_servers = required_actions_()
 
@@ -62,12 +57,7 @@ def generate_launch_description():
             '--run_simulator', run_simulator,
             '--run_actions', run_actions,
             '--run_continuous', run_continuous,
-            '--x', x,
-            '--y', y,
-            '--qx', qx,
-            '--qy', qy,
-            '--qz', qz,
-            '--qw', qw,
+            '--location', location,
         ],
     )
 
@@ -76,12 +66,7 @@ def generate_launch_description():
         DeclareLaunchArgument('run_simulator', default_value='false'),
         DeclareLaunchArgument('run_actions', default_value='false'),
         DeclareLaunchArgument('run_continuous', default_value='false'),
-        DeclareLaunchArgument('x', default_value='-0.56'),
-        DeclareLaunchArgument('y', default_value='0.60'),
-        DeclareLaunchArgument('qx', default_value='0.0'),
-        DeclareLaunchArgument('qy', default_value='0.0'),
-        DeclareLaunchArgument('qz', default_value='0.0'),
-        DeclareLaunchArgument('qw', default_value='1.0'),
+        DeclareLaunchArgument('location', default_value='location'),
         tb3_launch,
         *action_nodes,
         move_to_tree_node
@@ -89,7 +74,6 @@ def generate_launch_description():
 
 
 ## to run
-# ros2 launch smart_home_pytree move_to_tree_with_sim.launch.py \
-#     x:=-1.2 y:=0.8 qz:=0.707 qw:=0.707
+# ros2 launch smart_home_pytree move_to_tree_with_sim.launch.py location:=living_room
 
-# ros2 launch smart_home_pytree launch_move_tree.launch.py run_simulator:=true run_actions:=true
+# ros2 launch smart_home_pytree launch_move_tree.launch.py run_simulator:=true run_actions:=true run_continuous:=true

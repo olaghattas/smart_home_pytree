@@ -44,13 +44,14 @@ class CheckRobotStateKey(py_trees.behaviour.Behaviour):
         print(f"  • From state: {info['state_source']}\n")
         
 class LoggingBehavior(py_trees.behaviour.Behaviour):
-    def __init__(self, name: str, message: str):
+    def __init__(self, name: str, message: str, status: py_trees.common.Status =py_trees.common.Status.SUCCESS):
         """
         A simple logging behavior that prints the current time and a custom message
         each time it's ticked.
         """
         super().__init__(name)
         self.message = message
+        self.status = status
 
     def setup(self, **kwargs):
         """
@@ -76,10 +77,63 @@ class LoggingBehavior(py_trees.behaviour.Behaviour):
         # Alternatively, you can also print if you want console output:
         print(full_message)
 
-        return py_trees.common.Status.SUCCESS
+        return self.status
 
     def terminate(self, new_status):
         """
         Called whenever the behavior switches to a non-running state.
         """
         self.logger.debug(f"{self.name} [LoggingBehavior::terminate()][{self.status}→{new_status}]")
+         
+class GetPersonLocation(py_trees.behaviour.Behaviour):
+    """
+    Node that retrieves the current person's location
+    (e.g., from a topic or blackboard variable).
+    """
+    def __init__(self, state, name="GetPersonLocation"):
+        super().__init__(name)
+        self.state = state
+        self.blackboard = py_trees.blackboard.Blackboard()
+        self.locations = self.blackboard.get("locations")
+        print("locations", self.locations)
+        
+    def update(self):
+        value = self.state.get("person_location", None)
+        print("value: ", value)
+        print("type value: ", type(value))
+        
+        ## check if location is valid
+        if value is None or value not in self.locations:
+            print("location not in available locations")
+            return py_trees.common.Status.FAILURE
+        
+        ## update blackboard
+        print(" set in blackboard")
+        self.blackboard.set("person_location", value)
+        return py_trees.common.Status.SUCCESS
+    
+class RobotPersonSameLocation(py_trees.behaviour.Behaviour):
+    """
+    Node that checks if robot and person are in the same location
+    """
+    def __init__(self, state, name="RobotPersonSameLocation"):
+        super().__init__(name)
+        self.state = state
+        
+    def update(self):
+        person_location = self.state.get("person_location", None)
+        robot_location = self.state.get("robot_location", None)
+        
+        print(f"[DEBUG] [{self.name}] person_location: {person_location}")
+        print(f"[DEBUG] [{self.name}] robot_location: {robot_location}")
+
+        if person_location is None or robot_location is None:
+            return py_trees.common.Status.FAILURE
+        
+        if person_location == robot_location:
+            print(f"[INFO] [{self.name}] Person and robot are in the SAME location: {person_location}")
+            return py_trees.common.Status.SUCCESS
+        else: 
+            print(f"[INFO] [{self.name}] Person and robot are in DIFFERENT locations -> "
+                  f"Person: {person_location}, Robot: {robot_location}")
+            return py_trees.common.Status.FAILURE

@@ -45,3 +45,16 @@ def load_locations_to_blackboard(yaml_path: str):
 if __name__ == "__main__":
     yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
     bb = load_locations_to_blackboard(yaml_file_path)
+    print("bb: ",bb)
+    
+    print("\n--- Blackboard raw storage ---")
+    print(py_trees.blackboard.Blackboard.storage)
+    
+    target_location_name = "kitchen"
+    target_location = bb.get("locations")[target_location_name]
+
+    x = target_location["x"]
+    y = target_location["y"]
+    quat_vals = target_location["quat"]
+
+    print("x: ", x, " y: ", y, " quat: ", quat_vals)

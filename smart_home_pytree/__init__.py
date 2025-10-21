@@ -18,3 +18,4 @@ from smart_home_pytree.trees import base_tree_runner
 
 from . import util_behaviors
 from . import robot_interface
+from . import registry

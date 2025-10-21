@@ -33,9 +33,6 @@ py-trees-render -b smart_home_pytree.charge_robot_tree.create_charge_robot_tree
 to play the tree:
 py-trees-render -b smart_home_pytree.charge_robot_tree.charge_robot_tree_main
 
-
-
-
 py-trees-render -b smart_home_pytree.move_to_tree.create_move_to_tree_main
 
 ## Video of running the tree

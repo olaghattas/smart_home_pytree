@@ -1,0 +1,1 @@
+After adding variables here, register in registry.py
