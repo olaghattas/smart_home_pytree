@@ -6,13 +6,6 @@ import py_trees.console as console
 import rclpy
 import sys
 from py_trees import display
-import os
-import signal
-import sys
-import psutil
-
-import launch
-import launch_ros.actions
 
 from smart_home_pytree.robot_interface import RobotInterface
 from smart_home_pytree.registry import load_locations_to_blackboard

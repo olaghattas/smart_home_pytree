@@ -8,18 +8,13 @@ The tree should check if the is charging and exit. else it moves the robot to ho
 
 
 import py_trees
-import py_trees_ros.trees
 from shr_msgs.action import DockingRequest
 import py_trees.console as console
 import rclpy
-import sys
-from geometry_msgs.msg import PoseStamped
-from std_msgs.msg import Bool
+
 import operator
 
-from py_trees import display
-
-from smart_home_pytree.util_behaviors import CheckRobotStateKey, LoggingBehavior
+from smart_home_pytree.behaviors.util_behaviors import CheckRobotStateKey, LoggingBehavior
 from smart_home_pytree.robot_interface import RobotInterface
 from smart_home_pytree.trees.base_tree_runner import BaseTreeRunner
 from smart_home_pytree.trees.move_to_tree import MoveToLocationTree

@@ -7,22 +7,14 @@ The tree receives an (x,y) position and a quaternion representing the target pos
 """
 
 import py_trees
-import py_trees_ros.trees
 
-import py_trees.console as console
 import rclpy
-import sys
-from geometry_msgs.msg import PoseStamped, Quaternion
-from std_msgs.msg import Bool
 import operator
 from shr_msgs.action import DockingRequest
 
-from py_trees import display
-
-from smart_home_pytree.util_behaviors import CheckRobotStateKey, LoggingBehavior
-from smart_home_pytree.robot_interface import RobotInterface
+from smart_home_pytree.behaviors.util_behaviors import CheckRobotStateKey, LoggingBehavior
 from smart_home_pytree.trees.base_tree_runner import BaseTreeRunner
-from smart_home_pytree.behaviors.move_to_bh import MoveToLandmark
+from smart_home_pytree.behaviors.move_to_behavior import MoveToLandmark
 import argparse
 
 

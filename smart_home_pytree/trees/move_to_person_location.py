@@ -26,8 +26,7 @@ The tree should move to the person if it reaches the location and the person has
 import py_trees
 import rclpy
 
-from py_trees import display
-from smart_home_pytree.util_behaviors import RobotPersonSameLocation, GetPersonLocation
+from smart_home_pytree.behaviors.util_behaviors import RobotPersonSameLocation, GetPersonLocation
 from smart_home_pytree.trees.base_tree_runner import BaseTreeRunner
 from smart_home_pytree.trees.move_to_tree import MoveToLocationTree
 
