@@ -12,10 +12,10 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
     Dynamic ActionClient behavior that reads target location from blackboard/state and sends a navigation goal to Nav2's /navigate_to_pose action server.
     Uses the ROS2 native ActionClient (not py_trees_ros).
     """
-    def __init__(self, state, node, location="", location_key="person_location", name="MoveToLandmark"):
+    def __init__(self, robot_interface, location="", location_key="person_location", name="MoveToLandmark"):
         super().__init__(name)
-        self.node = node
-        self.state = state
+        self.robot_interface = robot_interface
+        
         self.location = location
         self.location_key = location_key
         
@@ -26,14 +26,19 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
         self.goal_handle = None
         self.sent_goal = False
         
-        self.debug = True    
+        self.debug = True   
+        
         
     def setup(self, **kwargs):
-        if not self.node:
+        
+        print("MoveTO behavior robot_interface ",self.robot_interface)
+        print("MoveTO behavior self id:", id(self))
+        
+        if not self.robot_interface:
             raise RuntimeError("MoveToLandmark requires a ROS2 node during setup.")
         
         # Initialize ROS2 node and action client shell
-        self.action_client = ActionClient(self.node, NavigateToPose, '/navigate_to_pose')
+        self.action_client = ActionClient(self.robot_interface, NavigateToPose, '/navigate_to_pose')
 
         print(f"[INFO] [{self.name}] Waiting for /navigate_to_pose server...")
         if not self.action_client.wait_for_server(timeout_sec=10.0):
@@ -116,7 +121,7 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
                 print(f"[DEBUG] [{self.name}] No active goal.")
             return py_trees.common.Status.FAILURE
 
-        rclpy.spin_once(self.node, timeout_sec=0.1)
+        rclpy.spin_once(self.robot_interface, timeout_sec=0.1)
 
         if self.result_future and self.result_future.done():
             result = self.result_future.result()
@@ -140,6 +145,7 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
             cancel_future.add_done_callback(self._cancel_done_callback)
         else:
             print(f"[DEBUG] [{self.name}] No active goal to cancel on terminate.")
+     
 
     def _cancel_done_callback(self, future):
         """Confirm goal cancellation."""

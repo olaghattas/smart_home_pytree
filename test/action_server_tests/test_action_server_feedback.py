@@ -40,6 +40,7 @@ class DockingClient(Node):
         print("result", result)
         print("status", status)
         
+        # action_msgs/msg/GoalStatus.
         # int8 STATUS_UNKNOWN=0
         # int8 STATUS_ACCEPTED=1
         # int8 STATUS_EXECUTING=2

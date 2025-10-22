@@ -1,3 +1,4 @@
+## store infromation needed for all protocols
 locations:
   kitchen:
     x: 0.5
@@ -11,3 +12,35 @@ locations:
     x: 0.5
     y: -1.4
     quat: [0.0, 0.0, 1.0, 0.0]
+
+## need to be integerated 
+person_location_topic: "person_location"
+robot_location_topic: "robot_location"
+
+protocols:
+  TwoReminderProtocol:
+    medicine_am:
+      first_text: "please take your morning medicine"
+      second_text: "This is the second reminder to take your morning medicine"
+    medicine_pm:
+      first_text: "please take your night medicine"
+      second_text: "This is the second reminder to take your night medicine"
+
+  Version2TwoReminderProtocol:
+    medicine_am:
+      first_reminder:
+        type: script
+        data: "please take your morning medicine"
+      second_reminder:
+        type: audio
+        data: "/home/olagh48652/smart-home/src/smart-home-robot/shr_resources/resources/food_reminder.mp3"
+
+    medicine_pm:
+      first_reminder:
+        type: script
+        data: "please take your night medicine"
+      second_reminder:
+        type: audio
+        data: "/home/olagh48652/smart-home/src/smart-home-robot/shr_resources/resources/food_reminder.mp3"
+
+

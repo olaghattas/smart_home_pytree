@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-This script is repsponsible for creating the charge robot tree.
+This script is responsible for creating the charge robot tree.
 
 The tree should check if the is charging and exit. else it moves the robot to home position then dock the robot and checks if it succcessfully charged. It will try for num_attempts then log if it fails
 """
@@ -11,11 +11,12 @@ import py_trees
 from shr_msgs.action import DockingRequest
 import py_trees.console as console
 import rclpy
-
+import py_trees_ros
 import operator
 
-from smart_home_pytree.behaviors.util_behaviors import CheckRobotStateKey, LoggingBehavior
-from smart_home_pytree.robot_interface import RobotInterface
+from smart_home_pytree.behaviors.check_robot_state_key import CheckRobotStateKey
+from smart_home_pytree.behaviors.logging_behavior import LoggingBehavior
+from smart_home_pytree.behaviors.check_robot_state_key import CheckRobotStateKey
 from smart_home_pytree.trees.base_tree_runner import BaseTreeRunner
 from smart_home_pytree.trees.move_to_tree import MoveToLocationTree
 
@@ -28,7 +29,7 @@ def required_actions_():
         
 
 class ChargeRobotTree(BaseTreeRunner):      
-    def __init__(self, node_name: str, **kwargs):
+    def __init__(self, node_name: str, robot_interface=None, **kwargs):
         """
         Initialize the ChargeRobotTree.
 
@@ -38,10 +39,11 @@ class ChargeRobotTree(BaseTreeRunner):
         """
         super().__init__(
             node_name=node_name,
+            robot_interface=robot_interface,
             **kwargs
         )
     
-    def create_tree(self, robot_interface) -> py_trees.behaviour.Behaviour:
+    def create_tree(self) -> py_trees.behaviour.Behaviour:
         """
         Create a tree to handle charging the robot 
 
@@ -56,15 +58,18 @@ class ChargeRobotTree(BaseTreeRunner):
         num_attempts = self.kwargs.get("num_attempts", 3)
         print("num_attempts", num_attempts)
 
+        print("ChargeRobotTree robot_interface ",self.robot_interface)
+        print("ChargeRobotTree self id:", id(self))
+
+
         # --- Task Selector Equivalent to Fallback---
         charge_robot = py_trees.composites.Selector(name="Tasks", memory=True)
         
-        state = robot_interface.state
 
         # Behavior to check charging
         charging_status = CheckRobotStateKey(
-            name="Check_Charging",
-            state=state,
+            name="Check_Charging_charge_robot",
+            robot_interface=self.robot_interface,
             key="charging",
             expected_value=True,
             comparison=operator.eq
@@ -74,7 +79,7 @@ class ChargeRobotTree(BaseTreeRunner):
         # Same as above
         check_charging_charge_seq = CheckRobotStateKey(
             name="Check_Charging_ChargeSeq",
-            state=state,
+            robot_interface=self.robot_interface,
             key="charging",
             expected_value=True,
             comparison=operator.eq
@@ -83,10 +88,11 @@ class ChargeRobotTree(BaseTreeRunner):
         ## takes position as input x, y , quat default 0 0 0 for now
         move_to_home_tree = MoveToLocationTree(
             node_name="move_to_location_tree",
+            robot_interface=self.robot_interface,
             location=target_location  # pass any location here
         )
 
-        move_to_home = move_to_home_tree.create_tree(robot_interface)
+        move_to_home = move_to_home_tree.create_tree()
         # move_to_home = py_trees.behaviours.Success(name="Move_to_Pose")  # Placeholder for actual move action
 
 
@@ -168,7 +174,7 @@ def main(args=None):
     tree_runner = ChargeRobotTree(
         node_name="charge_robot_tree",
     )
-    tree_runner.setup()
+    # tree_runner.setup()
 
     print("run_continuous", args.run_continuous)
     try:

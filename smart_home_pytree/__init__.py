@@ -16,6 +16,6 @@ from smart_home_pytree.trees import base_tree_runner
 #     "move_to_tree": move_to_tree.run_tree_infinite,
 # }
 
-from . import util_behaviors
+from smart_home_pytree.behaviors import check_robot_state_key, get_person_location, logging_behavior, move_to_behavior, robot_person_same_location
 from . import robot_interface
 from . import registry

@@ -14,9 +14,17 @@ def load_locations_to_blackboard(yaml_path: str):
     ## singleton-style check. To prevent writing data multiple times since it will be used
     ## in the subtrees.
     # --- Singleton guard ---
-    if getattr(blackboard, "initialized", False):
-        # Already done → skip reloading
+    # if getattr(blackboard, "initialized", False):
+    #     # Already done → skip reloading
+    #     print("shuwe heta")
+    #     return blackboard
+    
+    try:
+        blackboard.get('initialized')
+        # print("shuwe heta")
         return blackboard
+    except:
+        pass
     # ------------------------
     
     # Load YAML
@@ -36,7 +44,7 @@ def load_locations_to_blackboard(yaml_path: str):
         print(f"  {name}: {loc}")
 
     # Set flag (singleton-style marker)
-    blackboard.initialized = True
+    blackboard.set("initialized", True) 
     print("[Blackboard] Registered 'locations' once only.")
     
     return blackboard

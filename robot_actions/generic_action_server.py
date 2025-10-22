@@ -17,7 +17,6 @@ example of how to do that:
 Raises:
     NotImplementedError: if execute_callabck is not implemented in your class
 
-
 """
     
 class GenericActionServer(Node):
