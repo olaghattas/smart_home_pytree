@@ -174,7 +174,7 @@ def main(args=None):
     tree_runner = ChargeRobotTree(
         node_name="charge_robot_tree",
     )
-    # tree_runner.setup()
+    tree_runner.setup()
 
     print("run_continuous", args.run_continuous)
     try:

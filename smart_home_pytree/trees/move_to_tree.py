@@ -139,7 +139,7 @@ def main(args=None):
         location=args.location,
         location_key=args.location_key,
     )
-    # tree_runner.setup()
+    tree_runner.setup()
 
     print("run_continuous", args.run_continuous)
     try:

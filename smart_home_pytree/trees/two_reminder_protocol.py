@@ -238,7 +238,7 @@ def main(args=None):
         node_name="two_reminder_protocol_tree",
         protocol_name=protocol_name,
     )
-    # tree_runner.setup()
+    tree_runner.setup()
     
     print("run_continuous", args.run_continuous)
     try:

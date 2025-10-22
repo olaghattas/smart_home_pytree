@@ -46,7 +46,7 @@ class BaseTreeRunner:
         load_locations_to_blackboard(yaml_file_path)
         self.rclpy_not_from_here = False
         
-        self.setup()
+        # self.setup()
     
     def required_actions(self) -> dict:
         """
