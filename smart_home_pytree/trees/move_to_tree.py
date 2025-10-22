@@ -17,6 +17,7 @@ from smart_home_pytree.behaviors.check_robot_state_key import CheckRobotStateKey
 from smart_home_pytree.trees.base_tree_runner import BaseTreeRunner
 from smart_home_pytree.behaviors.move_to_behavior import MoveToLandmark
 import argparse
+from smart_home_pytree.robot_interface import get_robot_interface
 
 ## launch file is using
 def required_actions_():
@@ -32,7 +33,7 @@ def required_actions_():
  
 ## todo register positions in blackboard
 class MoveToLocationTree(BaseTreeRunner):      
-    def __init__(self, node_name: str, robot_interface=None, **kwargs):
+    def __init__(self, node_name: str,robot_interface=None, **kwargs):
         """
         Initialize the MoveToLocationTree.
 
@@ -45,6 +46,7 @@ class MoveToLocationTree(BaseTreeRunner):
             robot_interface=robot_interface,
             **kwargs
         )
+        # self.robot_interface = robot_interface
 
     
     def create_tree(self) -> py_trees.behaviour.Behaviour:
@@ -154,8 +156,5 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-    
-    
-
   
 # python3 move_to_tree.py --location kitchen --run_actions True --run_simulator False --run_continuous False

@@ -7,7 +7,7 @@ import rclpy
 import sys
 from py_trees import display
 
-from smart_home_pytree.robot_interface import RobotInterface
+# from smart_home_pytree.robot_interface
 from smart_home_pytree.registry import load_locations_to_blackboard
 import threading
 
@@ -31,9 +31,8 @@ class BaseTreeRunner:
     Subclasses must override `create_tree()`.
     """
 
-    def __init__(self, node_name: str, robot_interface = None, **kwargs):
+    def __init__(self, node_name: str, setup = False, robot_interface = None, **kwargs):
         self.node_name = node_name
-        self.robot_interface = None
         self.executor_1 = None
         self.executor_2 = None
         self.tree = None
@@ -89,7 +88,7 @@ class BaseTreeRunner:
         else:
             console.logwarn("  • No specific actions required.")
                 
-    def create_tree(self, robot_interface) -> py_trees.behaviour.Behaviour:
+    def create_tree(self) -> py_trees.behaviour.Behaviour:
         """
         Override this in subclasses to define the specific behavior tree.
         """
@@ -105,23 +104,13 @@ class BaseTreeRunner:
         # rclpy.init(args=None)
         
         print("######### SETUP ##################")
-        self.robot_interface = RobotInterface()
+        
         print("BASEE TREE self.robot_interface", self.robot_interface)
         print("BASEE TREE self id:", id(self))
-
-        self.executor_1 = rclpy.executors.MultiThreadedExecutor()
-        self.executor_1.add_node(self.robot_interface)
+       
         
         self.executor_2 = rclpy.executors.MultiThreadedExecutor()
-        
-        
-        def spin_robot_interface():
-            self.executor_1.spin()
-
-        # Start spinning in a separate thread
-        self.executor_thread = threading.Thread(target=spin_robot_interface, daemon=True)
-        self.executor_thread.start()
-
+            
         # Build the tree
         self.root = self.create_tree()
         self.tree = py_trees_ros.trees.BehaviourTree(
@@ -193,7 +182,7 @@ class BaseTreeRunner:
                 print("\n")
             except Exception as e:
                 import traceback
-                print("⚠️ Exception during tick:")
+                print(" Exception during tick:")
                 traceback.print_exc()
                 self.executor_2.shutdown()
                 self.cleanup(exit_code=1)

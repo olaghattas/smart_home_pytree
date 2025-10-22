@@ -1,113 +1,130 @@
 import rclpy
 from rclpy.node import Node
-
+from rclpy.executors import MultiThreadedExecutor
 from std_msgs.msg import String, Bool
-from threading import Lock
+import threading
 
 class RobotState:
-    """Thread-safe state container."""
-    def __init__(self):
-        self._data = {}
-        self._lock = Lock()
-        self._in_use = False
-        self._owner = None
-    
-    # Data Management    
+    """Thread-safe singleton state container."""
+
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(RobotState, cls).__new__(cls)
+                    cls._instance._data = {}
+                    cls._instance._owner = None
+        return cls._instance
+
+    # Data Management
     def update(self, key, value):
         """Update or add a key-value pair."""
-        with self._lock:
-            self._data[key] = value
+        self._data[key] = value
 
     def get(self, key, default=None):
         """Get a value safely."""
-        with self._lock:
-            return self._data.get(key, default)
+        return self._data.get(key, default)
+
     def keys(self):
         """Return a list of all available keys in the state."""
-        with self._lock:
-            return list(self._data.keys())
-        
-    def to_dict(self):
-        with self._lock:
-            return dict(self._data)
-        
-    
-    # Access Management
-    def acquire(self, owner=None):
-        """
-        Attempt to acquire control of the state.
-        Returns True if acquired successfully, False if already in use.
-        """
-        with self._lock:
-            if self._in_use:
-                print("RobotState in Use")
-                return False
-            self._in_use = True
-            self._owner = owner
-            return True
+        return list(self._data.keys())
 
-    def release(self):
-        """Release control of the state."""
-        with self._lock:
-            self._in_use = False
-            self._owner = None
-
-    def is_in_use(self):
-        """Return True if the state is currently locked (in use)."""
-        with self._lock:
-            return self._in_use
-        
     # Debug / Introspection
     def __str__(self):
-        """Readable printout when you do `print(state)`."""
-        with self._lock:
-            keys = list(self._data.keys())
-            owner = self._owner or "None"
-            return (
-                f"=== RobotState ===\n"
-                f"Keys: {keys if keys else 'No data yet'}\n"
-                f"In use: {self._in_use}\n"
-                f"Owner: {owner}\n"
-                f"=================="
-            )
+        keys = list(self._data.keys())
+        owner = self._owner or "None"
+        return (
+            f"=== RobotState ===\n"
+            f"Keys: {keys if keys else 'No data yet'}\n"
+            f"Owner: {owner}\n"
+            f"=================="
+        )
 
-    __repr__ = __str__  # same behavior in interactive shells
-
+    __repr__ = __str__
 
 class RobotInterface(Node):
-    """ROS2 interface to manage robot state and topics."""
+    """Singleton ROS2 interface running in a background thread."""
+
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self):
+        if getattr(self, "_initialized", False):
+            return
+
+        if not rclpy.ok():
+            rclpy.init()
+
         super().__init__('robot_interface')
-        
         self.state = RobotState()
         
-        self.robot_location = self.create_subscription(String, 'robot_location', self.robot_location_callback, 10)
-        self.person_location = self.create_subscription(String, 'person_location', self.person_location_callback, 10)
-        self.charging_sub = self.create_subscription(Bool, 'charging', self.charging_callback, 10)
+        # Subscriptions
+        self.create_subscription(String, 'robot_location', self.robot_location_callback, 10)
+        self.create_subscription(String, 'person_location', self.person_location_callback, 10)
+        self.create_subscription(Bool, 'charging', self.charging_callback, 10)
+
+        # Background spinning thread
+        self._stop_event = threading.Event()
+        self.spin_thread = threading.Thread(target=self._spin_background, daemon=True)
+        self.spin_thread.start()
+
+        self._initialized = True
+        self.get_logger().info("RobotInterface initialized and spinning in background thread.")
+
+    # --- Spinning ---
+    def _spin_background(self):
+        while rclpy.ok() and not self._stop_event.is_set():
+            rclpy.spin_once(self, timeout_sec=0.1)
+
+    def shutdown(self):
+        """Gracefully stop the background spinner."""
+        self.get_logger().info("Shutting down RobotInterface...")
+        self._stop_event.set()
+        self.spin_thread.join(timeout=1.0)
+        self.destroy_node()
+        self.get_logger().info("RobotInterface shutdown complete.")
+
+    # --- Callbacks ---
+    def robot_location_callback(self, msg):
+        self.get_logger().debug(f"Robot location: {msg.data}")
+        self.state.update('robot_location', msg.data)
+
+    def person_location_callback(self, msg):
+        self.get_logger().debug(f"Person location: {msg.data}")
+        self.state.update('person_location', msg.data)
 
     def charging_callback(self, msg):
-        self.state.update('charging', msg.data)
         self.get_logger().debug(f"Charging: {msg.data}")
-        
-    def robot_location_callback(self, msg):
-        self.state.update('robot_location', msg.data)
-        self.get_logger().debug(f"Person Location: {msg.data}")
-        
-    def person_location_callback(self, msg):
-        self.state.update('person_location', msg.data)
-        self.get_logger().debug(f"Person Location: {msg.data}")
+        self.state.update('charging', msg.data)
 
 
-def main(args=None):
-    rclpy.init(args=args)
+def get_robot_interface():
+    if not rclpy.ok():
+        rclpy.init()
+    return RobotInterface()
 
-    robot_interface = RobotInterface()
 
-    rclpy.spin(robot_interface)
-
-    # Destroy the node explicitly
-    robot_interface.destroy_node()
-    rclpy.shutdown()
+def main():
+    rclpy.init()
+    robot_interface = get_robot_interface()
+    try:
+        while rclpy.ok():
+            pass
+    except KeyboardInterrupt:
+        pass
+    finally:
+        robot_interface.shutdown()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':

@@ -21,6 +21,8 @@ from smart_home_pytree.trees.base_tree_runner import BaseTreeRunner
 from smart_home_pytree.trees.move_to_tree import MoveToLocationTree
 
 import argparse
+from smart_home_pytree.robot_interface import get_robot_interface
+
 
 def required_actions_():
         return {
@@ -42,6 +44,7 @@ class ChargeRobotTree(BaseTreeRunner):
             robot_interface=robot_interface,
             **kwargs
         )
+        # self.robot_interface = robot_interface
     
     def create_tree(self) -> py_trees.behaviour.Behaviour:
         """
@@ -61,11 +64,9 @@ class ChargeRobotTree(BaseTreeRunner):
         print("ChargeRobotTree robot_interface ",self.robot_interface)
         print("ChargeRobotTree self id:", id(self))
 
-
         # --- Task Selector Equivalent to Fallback---
         charge_robot = py_trees.composites.Selector(name="Tasks", memory=True)
         
-
         # Behavior to check charging
         charging_status = CheckRobotStateKey(
             name="Check_Charging_charge_robot",
@@ -152,6 +153,7 @@ class ChargeRobotTree(BaseTreeRunner):
 def str2bool(v):
     return str(v).lower() in ('true', '1', 't', 'yes')
 
+
 def main(args=None):    
     parser = argparse.ArgumentParser(
         description="""Robot Charging Behavior Tree 
@@ -171,8 +173,13 @@ def main(args=None):
 
     args, unknown = parser.parse_known_args()
 
+    # Start robot interface singleton (spins in its own thread)
+    # robot_interface = get_robot_interface()
+
+    # Pass the same instance into the tree
     tree_runner = ChargeRobotTree(
         node_name="charge_robot_tree",
+        # robot_interface=robot_interface
     )
     tree_runner.setup()
 
@@ -183,6 +190,7 @@ def main(args=None):
         else:
             tree_runner.run_until_done()
     finally:
+        # robot_interface.shutdown()
         tree_runner.cleanup()
 
     rclpy.shutdown()

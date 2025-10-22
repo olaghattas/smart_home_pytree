@@ -22,6 +22,9 @@ class CheckRobotStateKey(py_trees.behaviour.Behaviour):
 
     def update(self):
         # Retrieve safely
+        print("CheckRobotStateKey robot_interface ",self.robot_interface)
+        print("CheckRobotStateKey self id:", id(self))
+        
         value = self.robot_interface.state.get(self.key, None)
         if value is None:
             self.logger.warning(f"{self.name}: '{self.key}' not found in RobotState")

@@ -121,7 +121,8 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
                 print(f"[DEBUG] [{self.name}] No active goal.")
             return py_trees.common.Status.FAILURE
 
-        rclpy.spin_once(self.robot_interface, timeout_sec=0.1)
+        # its already 
+        # rclpy.spin_once(self.robot_interface, timeout_sec=0.1)
 
         if self.result_future and self.result_future.done():
             result = self.result_future.result()

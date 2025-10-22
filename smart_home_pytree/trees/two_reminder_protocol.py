@@ -110,7 +110,6 @@ def remove_protocol_info_from_bb(yaml_path: str, protocol_name: str):
     
     return blackboard
 
-
 class TwoReminderProtocolTree(BaseTreeRunner):      
     def __init__(self, node_name: str, robot_interface=None, **kwargs):
         """
