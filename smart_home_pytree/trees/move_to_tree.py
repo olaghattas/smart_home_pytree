@@ -91,9 +91,9 @@ class MoveToLocationTree(BaseTreeRunner):
         root.add_child(undocking_selector)
         undocking_selector.add_children([not_charging_status, undock_robot])
             
-        move_to_position = MoveToLandmark(self.robot_interface, location=location, location_key=location_key)
+        # move_to_position = MoveToLandmark(self.robot_interface, location=location, location_key=location_key)
         
-        # move_to_position = py_trees.behaviours.Success(name="Move_to_Pose_Success")  # Placeholder for actual move action
+        move_to_position = py_trees.behaviours.Success(name="Move_to_Pose_Success")  # Placeholder for actual move action
         root.add_child(move_to_position)
         return root
     
@@ -136,6 +136,15 @@ def main(args=None):
 
     args, unknown = parser.parse_known_args()
 
+    import threading
+
+
+    # Print all active threads
+    # print("Active threads before running:")
+    # for t in threading.enumerate():
+    #     print(f" - {t.name} (alive={t.is_alive()})")
+    # print(f"Total threads: {len(threading.enumerate())}")
+
     tree_runner = MoveToLocationTree(
         node_name="move_to_location_tree",
         location=args.location,
@@ -148,11 +157,17 @@ def main(args=None):
         if args.run_continuous:
             tree_runner.run_continuous()
         else:
-            tree_runner.run_until_done()
+            final_status = tree_runner.run_until_done()
+            print("final_status", final_status)
     finally:
+        print("clean up")
         tree_runner.cleanup()
-
-    rclpy.shutdown()
+    
+    # print("Active threads after cleanup:")
+    # for t in threading.enumerate():
+    #     print(f" - {t.name} (alive={t.is_alive()})")
+    # print(f"Total threads: {len(threading.enumerate())}")
+    
 
 if __name__ == "__main__":
     main()

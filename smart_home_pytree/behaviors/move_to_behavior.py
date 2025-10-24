@@ -26,7 +26,7 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
         self.goal_handle = None
         self.sent_goal = False
         
-        self.debug = True   
+        self.debug = False   
         
         
     def setup(self, **kwargs):

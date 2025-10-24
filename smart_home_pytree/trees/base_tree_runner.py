@@ -22,7 +22,7 @@ import threading
 ## kwargs are for variables that are not related to the BaseTreeRunner but to he ones inheriting from it.
 
 ## run_simulator true to run the turtlebot simulator for the /navigate_to_pose
-
+from smart_home_pytree.robot_interface import get_robot_interface
 import time 
 
 class BaseTreeRunner:
@@ -33,17 +33,18 @@ class BaseTreeRunner:
 
     def __init__(self, node_name: str, setup = False, robot_interface = None, **kwargs):
         self.node_name = node_name
-        self.executor_1 = None
-        self.executor_2 = None
+        self.executor_ = None
         self.tree = None
         self.root = None
         self.kwargs = kwargs   # store extra args for flexibility
         self.tb3_process = None
         self.launch_service = None
         yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
-        self.robot_interface=robot_interface
+        
+        self.robot_interface=get_robot_interface()
         load_locations_to_blackboard(yaml_file_path)
         self.rclpy_not_from_here = False
+        self._stop_tree = False
         
         # self.setup()
     
@@ -109,7 +110,8 @@ class BaseTreeRunner:
         print("BASEE TREE self id:", id(self))
        
         
-        self.executor_2 = rclpy.executors.MultiThreadedExecutor()
+        self.executor_ = rclpy.executors.MultiThreadedExecutor()
+        # self.executor_ = rclpy.executors.SingleThreadedExecutor()
             
         # Build the tree
         self.root = self.create_tree()
@@ -128,53 +130,12 @@ class BaseTreeRunner:
             self.cleanup(exit_code=1)
 
 
-        self.executor_2.add_node(self.tree.node)
-        
-     
-    # def run_until_done(self):
-    #     """Run until the tree finishes with SUCCESS or FAILURE."""
-    #     self.final_status = py_trees.common.Status.FAILURE
-
-    #     try:
-    #         while rclpy.ok():
-    #             # Tick tree
-    #             self.tree.root.tick_once()
-    #             print("=" * 25 + " TREE STATE " + "=" * 25)
-    #             print(display.unicode_tree(root=self.tree.root, show_status=True))
-    #             print("\n")
-
-    #             # Check for success/failure
-    #             if self.tree.root.status in [py_trees.common.Status.SUCCESS,
-    #                                         py_trees.common.Status.FAILURE]:
-    #                 console.loginfo(
-    #                     console.green +
-    #                     f"Tree finished with status: {self.tree.root.status}" +
-    #                     console.reset
-    #                 )
-    #                 self.final_status = self.tree.root.status
-    #                 break
-
-    #             # Let ROS process callbacks
-    #             self.executor.spin_once(timeout_sec=0.1)
-
-    #     except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
-    #         console.logwarn("Executor interrupted.")
-
-    #     finally:
-    #         self.cleanup()
-    #         rclpy.shutdown()
-
-    #     return self.final_status
+        self.executor_.add_node(self.tree.node)
 
     def run_until_done(self):
         """Run until the tree finishes with SUCCESS or FAILURE."""
         self.final_status = py_trees.common.Status.FAILURE # initialize
         def tick_tree_until_done(timer):
-            # self.tree.root.tick_once()
-            # print("=" * 25 + " TREE STATE " + "=" * 25)
-            # print(display.unicode_tree(root=self.tree.root, show_status=True))
-            # print("\n")
-            
             try:
                 self.tree.root.tick_once()
                 print("=" * 25 + " TREE STATE " + "=" * 25)
@@ -184,7 +145,6 @@ class BaseTreeRunner:
                 import traceback
                 print(" Exception during tick:")
                 traceback.print_exc()
-                self.executor_2.shutdown()
                 self.cleanup(exit_code=1)
                 return
 
@@ -198,12 +158,9 @@ class BaseTreeRunner:
                     console.reset
                 )
                 
-                self.final_status = self.tree.root.status
-                print(" self.final_status ",  self.final_status )
-                self.executor_2.shutdown()  # stop spinning
+                self.final_status = self.tree.root.status    
                 timer.cancel()
-                
-                rclpy.shutdown()
+                self._stop_tree = True 
 
         timer_period = 1.0
         tree_timer = self.tree.node.create_timer(
@@ -212,20 +169,20 @@ class BaseTreeRunner:
         )
 
         try:
-            self.executor_2.spin()   
+            while not self._stop_tree:
+                self.executor_.spin_once(timeout_sec=0.1)
+            print("stop spinning")  
         except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
             console.logwarn("Executor interrupted.")
         finally:
-            self.cleanup()
+            return self.final_status
         
-        print("olfat3")
-        return self.final_status
 
     def run_continuous(self):
         """Run the tree continuously until user stops."""
         self.tree.tick_tock(period_ms=1000.0)
         try:
-            self.executor_2.spin()
+            self.executor_.spin()
         except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
             console.logwarn("Executor interrupted.")
         finally:
@@ -233,28 +190,29 @@ class BaseTreeRunner:
 
     def cleanup(self, exit_code=0):
         """Clean shutdown of all nodes, executors, and subprocesses."""
+        print("cleanup")
         try:
+            print("self.tree",self.tree)
             if self.tree:
+                print("self.tree shutdown ")
                 self.tree.shutdown()
-
-            if self.executor_2:
-                self.executor_2.shutdown()
-           
-            if self.executor_1:
-                self.executor_1.shutdown()
-                self.executor_thread.join()
-
+                
+            print("self.robot_interface",self.robot_interface)
             if self.robot_interface:
-                self.robot_interface.destroy_node()
+                print("self.robot_interface shutdown ")
+                self.robot_interface.shutdown()
+
+            print("self.executor_",self.executor_)
+            if self.executor_ :
+                print("self.executor_ shutdown ")
+                self.executor_.shutdown()
+           
                 
             # Shutdown ROS2
             print("Self.rclpy_not_from_here", self.rclpy_not_from_here)
-            if not self.rclpy_not_from_here: # dont shutdown if you idnt initialize
+            if not self.rclpy_not_from_here: # dont shutdown if you Didnt initialize
                 print("Shutdown ROS2")
                 rclpy.try_shutdown()
 
         except Exception as e:
             print(f"Cleanup failed: {e}")
-
-        finally:
-            sys.exit(exit_code)
