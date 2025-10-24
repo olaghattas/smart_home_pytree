@@ -32,7 +32,6 @@ def test_move_to_location_tree_success():
         wait_time=1.0 
     )
 
-    # Suppose you have nodes: server_node, client_node
     executor = MultiThreadedExecutor()
     executor.add_node(mock_nav_server)
     executor.add_node(mock_undock_server)
@@ -68,16 +67,20 @@ def test_move_to_location_tree_success():
     final_status = move_tree.run_until_done()
     print("final_status", final_status)
 
-    # assert final_status == py_trees.common.Status.SUCCESS, f"Expected SUCCESS but got {final_status}"
+    assert final_status == py_trees.common.Status.SUCCESS, f"Expected SUCCESS but got {final_status}"
 
     # shut down
     executor.shutdown()
     executor_thread.join()
     mock_nav_server.destroy_node()
     mock_undock_server.destroy_node()
+    move_tree.cleanup()
     rclpy.shutdown()
     
 
 
 if __name__ == "__main__":
     test_move_to_location_tree_success()
+    
+    
+# to run : python3 -m test.unit.test_move_to_tree in /home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree

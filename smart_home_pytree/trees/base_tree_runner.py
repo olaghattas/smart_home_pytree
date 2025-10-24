@@ -41,11 +41,19 @@ class BaseTreeRunner:
         self.launch_service = None
         yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
         
-        self.robot_interface=get_robot_interface()
+        
         load_locations_to_blackboard(yaml_file_path)
-        self.rclpy_not_from_here = False
+        self.rclpy_initialized_here = None
         self._stop_tree = False
         
+        if robot_interface is None:
+            print("initialize robot interface")
+            self.robot_interface=get_robot_interface()
+        else:
+            print("NOTICE: USING PROVIDED ROBOT INTERFACE")
+            print("THIS IS ONLY DONE FOR TESTING UNLESS YOU MEANT TO DO IT")
+            self.robot_interface=robot_interface
+            
         # self.setup()
     
     def required_actions(self) -> dict:
@@ -100,9 +108,16 @@ class BaseTreeRunner:
         self.describe_requirements()
         
         if not rclpy.ok():
-            self.rclpy_not_from_here = True
-            rclpy.init(args=None)
-        # rclpy.init(args=None)
+            ## just for safety
+            try:
+                rclpy.init(args=None)
+                self.rclpy_initialized_here = True
+            except RuntimeError:
+                # ROS2 already initialized somewhere else
+                self.rclpy_initialized_here = False
+        else:
+            self.rclpy_initialized_here = False
+            
         
         print("######### SETUP ##################")
         
@@ -132,6 +147,57 @@ class BaseTreeRunner:
 
         self.executor_.add_node(self.tree.node)
 
+    ## test single loop run until done
+    # def run_until_done(self, tick_period=1.0):
+    #     """
+    #     Run the tree until it finishes with SUCCESS or FAILURE.
+    #     Single loop version: ticks tree and spins executor together.
+    #     """
+    #     self.final_status = py_trees.common.Status.FAILURE
+    #     self._stop_tree = False
+
+    #     try:
+    #         while rclpy.ok() and not self._stop_tree:
+    #             # --- Tick the tree ---
+    #             try:
+    #                 self.tree.root.tick_once()
+    #                 print("=" * 25 + " TREE STATE " + "=" * 25)
+    #                 print(display.unicode_tree(root=self.tree.root, show_status=True))
+    #                 print("\n")
+    #             except Exception:
+    #                 import traceback
+    #                 print("Exception during tree tick:")
+    #                 traceback.print_exc()
+    #                 self.cleanup(exit_code=1)
+    #                 return
+
+    #             # --- Check if tree finished ---
+    #             if self.tree.root.status in [
+    #                 py_trees.common.Status.SUCCESS,
+    #                 py_trees.common.Status.FAILURE
+    #             ]:
+    #                 console.loginfo(
+    #                     console.green +
+    #                     f"Tree finished with status: {self.tree.root.status}" +
+    #                     console.reset
+    #                 )
+    #                 self.final_status = self.tree.root.status
+    #                 self._stop_tree = True
+    #                 break
+
+    #             # --- Spin ROS2 executor once ---
+    #             self.executor_.spin_once(timeout_sec=tick_period)
+
+    #         print("Tree completed, exiting loop.")
+
+    #     except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
+    #         console.logwarn("Executor interrupted by user.")
+    #     finally:
+    #         # --- Clean shutdown ---
+    #         self.cleanup()
+    #         return self.final_status
+
+    
     def run_until_done(self):
         """Run until the tree finishes with SUCCESS or FAILURE."""
         self.final_status = py_trees.common.Status.FAILURE # initialize
@@ -162,6 +228,7 @@ class BaseTreeRunner:
                 timer.cancel()
                 self._stop_tree = True 
 
+        ## ticking the behavior tree at regular intervals
         timer_period = 1.0
         tree_timer = self.tree.node.create_timer(
             timer_period,
@@ -209,10 +276,10 @@ class BaseTreeRunner:
            
                 
             # Shutdown ROS2
-            print("Self.rclpy_not_from_here", self.rclpy_not_from_here)
-            if not self.rclpy_not_from_here: # dont shutdown if you Didnt initialize
-                print("Shutdown ROS2")
-                rclpy.try_shutdown()
+            print("Self.rclpy_initialized_here", self.rclpy_initialized_here)
+            if self.rclpy_initialized_here:
+                print("ROS2 shutdown ")
+                rclpy.try_shutdown() 
 
         except Exception as e:
             print(f"Cleanup failed: {e}")
