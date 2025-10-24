@@ -105,7 +105,7 @@ def main(args=None):
     )
 
     parser.add_argument('--run_continuous', type=str2bool, default=False, help="Run tree continuously (default: False)")
-    parser.add_argument("--num_attempts", type=int, default=3, help="Docking retry attempts (default: 3)")
+    parser.add_argument("--num_attempts", type=int, default=5, help="Docking retry attempts (default: 5)")
 
 
     args, unknown = parser.parse_known_args()

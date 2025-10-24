@@ -59,6 +59,8 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
             target_name = self.location
         else:
             target_name = self.blackboard.get(self.location_key)
+            
+        self.blackboard.set("going_to_location",target_name)
         
         # target_name = self.location or self.blackboard.get(self.location_key)
 
@@ -108,6 +110,11 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
             print(f"[WARN] [{self.name}] Goal rejected by server.")
             self.sent_goal = False
             self.feedback_message = "Goal rejected"
+            try:
+                self.blackboard.unset("going_to_location")
+                # print("goal_response_callback unset self.blackboard ")
+            except:
+                print("goal_response_callback: going_to_location not set so couldnt unset")
             return py_trees.common.Status.FAILURE
 
         if self.debug:
@@ -119,6 +126,7 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
         if not self.sent_goal:
             if self.debug:
                 print(f"[DEBUG] [{self.name}] No active goal.")
+            self.blackboard.unset("going_to_location")
             return py_trees.common.Status.FAILURE
 
         # its already 
@@ -130,10 +138,22 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
             if status == 4:  # SUCCEEDED
                 print(f"[INFO] [{self.name}] Goal succeeded.")
                 self.sent_goal = False
+                try:
+                    self.blackboard.unset("going_to_location")
+                    # print(" update unset self.blackboard ")
+                except:
+                    print("update going_to_location not set so couldnt unset")
                 return py_trees.common.Status.SUCCESS
             else:
                 print(f"[WARN] [{self.name}] Goal failed with status {status}.")
                 self.sent_goal = False
+                
+                try:
+                    self.blackboard.unset("going_to_location")
+                    print("update unset self.blackboard ")
+                except:
+                    print("update going_to_location not set so couldnt unset")            
+
                 return py_trees.common.Status.FAILURE
 
         return py_trees.common.Status.RUNNING
@@ -144,6 +164,11 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
             print(f"[DEBUG] [{self.name}] Cancelling current goal...")
             cancel_future = self.goal_handle.cancel_goal_async()
             cancel_future.add_done_callback(self._cancel_done_callback)
+            try:
+                self.blackboard.unset("going_to_location")
+                # print("in cancel unset self.blackboard ")
+            except:
+                print("in cancel going_to_location not set so couldnt unset")
         else:
             print(f"[DEBUG] [{self.name}] No active goal to cancel on terminate.")
      

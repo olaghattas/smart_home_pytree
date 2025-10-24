@@ -91,9 +91,9 @@ class MoveToLocationTree(BaseTreeRunner):
         root.add_child(undocking_selector)
         undocking_selector.add_children([not_charging_status, undock_robot])
             
-        # move_to_position = MoveToLandmark(self.robot_interface, location=location, location_key=location_key)
+        move_to_position = MoveToLandmark(self.robot_interface, location=location, location_key=location_key)
         
-        move_to_position = py_trees.behaviours.Success(name="Move_to_Pose_Success")  # Placeholder for actual move action
+        # move_to_position = py_trees.behaviours.Success(name="Move_to_Pose_Success")  # Placeholder for actual move action
         root.add_child(move_to_position)
         return root
     
