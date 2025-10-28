@@ -7,25 +7,35 @@ from shr_msgs.action import DockingRequest  # using as a placeholder action
 from .generic_action_server import run_action_server, GenericActionServer
 from rclpy.executors import MultiThreadedExecutor
 import time
+from geometry_msgs.msg import Twist
+import os
 
 class DockingActionServer(GenericActionServer):
     def __init__(self):
         super().__init__(DockingRequest, "undock")
+        
+        self.vel_pub = self.create_publisher(Twist, os.getenv("cmd_vel"), 10)
+
+        self.time_out = 2
+        self.min_range = None
 
     def execute_callback(self, goal_handle):
         # Do the docking logic here
         feedback = self._action_type.Feedback()
+        result = self._action_type.Result()
         for i in range(100):
             print("i",i)
             if goal_handle.is_cancel_requested:
                 goal_handle.canceled()
                 return self._action_type.Result()
-            feedback.percentage_completed = float(i)
+            feedback.running = True
             goal_handle.publish_feedback(feedback)
         time.sleep(0.01)
         goal_handle.succeed()
-        print(self._action_type.Result())
-        return self._action_type.Result()
+        result.result = True 
+        print("result: ", result)
+        return result
+
     
   
 def main():
