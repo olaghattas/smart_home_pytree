@@ -66,6 +66,25 @@ It will vary for each home but should include:
 - (b) Protocol names and their corresponding identifiers (e.g., `medicine_am`) along with information needed for the protocols.
 
 ---
+
+### `robot_actions directory: `
+contains the action servers needed for the robot:
+
+#### `generic_action_server.py`
+Defines the base class for action servers.  
+It raises an error if the derived class does not implement `execute_callback`.  
+
+Currently availbale action servers:
+mock docking:
+mock undocking: 
+
+TODO:
+undocking: actually send undock
+docking: actually dock the robot
+question answer
+
+
+---
 ### `smart_home_pytree directory: `
 
 This directory contains two main folders: **`trees`** and **`behaviors`**.
@@ -74,6 +93,7 @@ This directory contains two main folders: **`trees`** and **`behaviors`**.
 - **`robot_interface.py`** – A singleton class that runs in its own thread when initialized. It includes data about the robot and environment that it gets from the topics.
 - **`registry.py`** – Reads data from the YAML file and registers it into the blackboard.
 
+---
 #### `smart_home_pytree/trees: `
 
 Contains the trees listed in available trees section in addition to the base class:
