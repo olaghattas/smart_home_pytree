@@ -136,10 +136,11 @@ def main(args=None):
 
     args, unknown = parser.parse_known_args()
 
-    import threading
+   
 
 
     # Print all active threads
+    # import threading
     # print("Active threads before running:")
     # for t in threading.enumerate():
     #     print(f" - {t.name} (alive={t.is_alive()})")
@@ -168,6 +169,7 @@ def main(args=None):
     #     print(f" - {t.name} (alive={t.is_alive()})")
     # print(f"Total threads: {len(threading.enumerate())}")
     
+    rclpy.shutdown() 
 
 if __name__ == "__main__":
     main()

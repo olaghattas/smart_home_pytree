@@ -125,8 +125,8 @@ class BaseTreeRunner:
         print("BASEE TREE self id:", id(self))
        
         
-        self.executor_ = rclpy.executors.MultiThreadedExecutor()
-        # self.executor_ = rclpy.executors.SingleThreadedExecutor()
+        # self.executor_ = rclpy.executors.MultiThreadedExecutor()
+        self.executor_ = rclpy.executors.SingleThreadedExecutor()
             
         # Build the tree
         self.root = self.create_tree()
@@ -146,57 +146,6 @@ class BaseTreeRunner:
 
 
         self.executor_.add_node(self.tree.node)
-
-    ## test single loop run until done
-    # def run_until_done(self, tick_period=1.0):
-    #     """
-    #     Run the tree until it finishes with SUCCESS or FAILURE.
-    #     Single loop version: ticks tree and spins executor together.
-    #     """
-    #     self.final_status = py_trees.common.Status.FAILURE
-    #     self._stop_tree = False
-
-    #     try:
-    #         while rclpy.ok() and not self._stop_tree:
-    #             # --- Tick the tree ---
-    #             try:
-    #                 self.tree.root.tick_once()
-    #                 print("=" * 25 + " TREE STATE " + "=" * 25)
-    #                 print(display.unicode_tree(root=self.tree.root, show_status=True))
-    #                 print("\n")
-    #             except Exception:
-    #                 import traceback
-    #                 print("Exception during tree tick:")
-    #                 traceback.print_exc()
-    #                 self.cleanup(exit_code=1)
-    #                 return
-
-    #             # --- Check if tree finished ---
-    #             if self.tree.root.status in [
-    #                 py_trees.common.Status.SUCCESS,
-    #                 py_trees.common.Status.FAILURE
-    #             ]:
-    #                 console.loginfo(
-    #                     console.green +
-    #                     f"Tree finished with status: {self.tree.root.status}" +
-    #                     console.reset
-    #                 )
-    #                 self.final_status = self.tree.root.status
-    #                 self._stop_tree = True
-    #                 break
-
-    #             # --- Spin ROS2 executor once ---
-    #             self.executor_.spin_once(timeout_sec=tick_period)
-
-    #         print("Tree completed, exiting loop.")
-
-    #     except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
-    #         console.logwarn("Executor interrupted by user.")
-    #     finally:
-    #         # --- Clean shutdown ---
-    #         self.cleanup()
-    #         return self.final_status
-
     
     def run_until_done(self):
         """Run until the tree finishes with SUCCESS or FAILURE."""

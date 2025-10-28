@@ -61,7 +61,7 @@ class GuardedMoveToPersonLocationTree(BaseTreeRunner):
         if going_to is None:
             return True  # EternalGuard expects truthy/falsy, not Status
 
-        current_person_loc = self.robot_interface.state.get("person_location", None) ## balckboard only gets updated in the function 
+        current_person_loc = self.robot_interface.state.get("person_location", None) ## blackboard only gets updated in the function 
         # getattr(self.blackboard, "person_location", None)
         if current_person_loc is None:
             print("current_person_loc  is none")

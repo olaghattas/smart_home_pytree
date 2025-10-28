@@ -1,16 +1,3 @@
-    # <BehaviorTree ID="TwoReminderProtocol">
-    #     <Sequence name="TwoReminderSequence">
-    #         <SubTree ID="MoveToPersonLocation"/>
-    #         <ReadScript name="read_script" text="Hello, I am your robot assistant."/>
-    #         <SubTree ID="ChargeRobot"/>
-    #         <Wait name="wait" duration_to_wait="5"/>
-    #         <SubTree ID="MoveToPersonLocation"/>
-    #         <PlayAudio name="play_audio" file=".mp3"/>
-    #         <SubTree ID="ChargeRobot"/>food_reminder
-    #         <Reboot name="reboot_robot"/>
-    #     </Sequence>
-    # </BehaviorTree>
-    
 #!/usr/bin/env python3
 
 """
@@ -249,7 +236,7 @@ def main(args=None):
         remove_protocol_info_from_bb(yaml_path, protocol_name)
         tree_runner.cleanup()
 
-    # rclpy.shutdown()
+    rclpy.shutdown()
 
 
 if __name__ == "__main__":

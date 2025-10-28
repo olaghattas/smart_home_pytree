@@ -54,7 +54,6 @@ class DockingActionServer(GenericActionServer):
             feedback.running = True
             goal_handle.publish_feedback(feedback)
         
-        
         # stop the robot after undocking
         msg.linear.x = 0.0
         self.vel_pub.publish(msg)  

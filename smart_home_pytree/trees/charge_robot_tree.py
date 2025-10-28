@@ -192,7 +192,6 @@ def main(args=None):
     finally:
         # robot_interface.shutdown()
         tree_runner.cleanup()
-
     rclpy.shutdown()
 
 
