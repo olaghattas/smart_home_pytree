@@ -275,3 +275,6 @@ if __name__ == "__main__":
 
 ## doesnt work currenly
 # pytest test/unit -vv from smart_home_pytree_ws/src/smart_home_pytree
+
+
+# python3 -m pytest -s -v test_pytest.py 

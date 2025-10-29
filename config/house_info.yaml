@@ -26,21 +26,21 @@ protocols:
       first_text: "please take your night medicine"
       second_text: "This is the second reminder to take your night medicine"
 
-  Version2TwoReminderProtocol:
-    medicine_am:
-      first_reminder:
-        type: script
-        data: "please take your morning medicine"
-      second_reminder:
-        type: audio
-        data: "/home/olagh48652/smart-home/src/smart-home-robot/shr_resources/resources/food_reminder.mp3"
+  # Version2TwoReminderProtocol:
+  #   medicine_am:
+  #     first_reminder:
+  #       type: script
+  #       data: "please take your morning medicine"
+  #     second_reminder:
+  #       type: audio
+  #       data: "/home/olagh48652/smart-home/src/smart-home-robot/shr_resources/resources/food_reminder.mp3"
 
-    medicine_pm:
-      first_reminder:
-        type: script
-        data: "please take your night medicine"
-      second_reminder:
-        type: audio
-        data: "/home/olagh48652/smart-home/src/smart-home-robot/shr_resources/resources/food_reminder.mp3"
+  #   medicine_pm:
+  #     first_reminder:
+  #       type: script
+  #       data: "please take your night medicine"
+  #     second_reminder:
+  #       type: audio
+  #       data: "/home/olagh48652/smart-home/src/smart-home-robot/shr_resources/resources/food_reminder.mp3"
 
 

@@ -7,95 +7,52 @@ This script is responsible for running the two reminder protocol.
 
 
 import py_trees
-from shr_msgs.action import DockingRequest
-import py_trees.console as console
-import rclpy
-import py_trees_ros
-import operator
 
-from smart_home_pytree.behaviors.check_robot_state_key import CheckRobotStateKey
-from smart_home_pytree.behaviors.logging_behavior import LoggingBehavior
-from smart_home_pytree.behaviors.check_robot_state_key import CheckRobotStateKey
-from smart_home_pytree.robot_interface import RobotInterface
+import rclpy
+
 from smart_home_pytree.trees.base_tree_runner import BaseTreeRunner
-from smart_home_pytree.trees.move_to_tree import MoveToLocationTree
 import yaml
 import argparse
-from smart_home_pytree.behaviors.action_behaviors import play_audio, read_script, wait
-from smart_home_pytree.trees.move_to_person_location import MoveToPersonLocationTree
-from smart_home_pytree.trees.charge_robot_tree import ChargeRobotTree
 
-### Register to blackboard information for two reminder protocol
-
-def load_protocol_info_from_bb(yaml_path: str, protocol_name: str):
-    """
-    Load protocol related data from a YAML file and register it to the py_trees blackboard.
-    """
+from smart_home_pytree.trees.read_script_tree import ReadScriptTree
+from smart_home_pytree.registry import load_locations_to_blackboard, load_protocols_to_bb
+from smart_home_pytree.behaviors.check_protocol_bb import CheckProtocolBB
+## todo check if needed.
+# def remove_protocol_info_from_bb(yaml_path: str, protocol_name: str):
+    # """
+    # Remove protocol related data from py_trees blackboard.
+    # """
     # Get blackboard
-    blackboard = py_trees.blackboard.Blackboard()
+    # blackboard = py_trees.blackboard.Blackboard()
     
-    # Load YAML
-    with open(yaml_path, 'r') as file:
-        data = yaml.safe_load(file)
+    
+    # # Load YAML
+    # with open(yaml_path, 'r') as file:
+    #     data = yaml.safe_load(file)
 
-    # Ensure structure is correct
-    if "protocols" not in data or "TwoReminderProtocol" not in data["protocols"]:
-        raise KeyError("YAML must contain protocols -> TwoReminderProtocol structure.")
+    # # Ensure structure is correct
+    # if "protocols" not in data or "TwoReminderProtocol" not in data["protocols"]:
+    #     raise KeyError("YAML must contain protocols -> TwoReminderProtocol structure.")
     
-    protocols = data["protocols"]["TwoReminderProtocol"]
+    # protocols = data["protocols"]["TwoReminderProtocol"]
     
-    # Check protocol_name is valid
-    if not protocol_name:
-        raise ValueError("protocol_name is empty. Please specify one (e.g., 'medicine_am').")
+    # # Check protocol_name is valid
+    # if not protocol_name:
+    #     raise ValueError("protocol_name is empty. Please specify one (e.g., 'medicine_am').")
     
-    if protocol_name not in protocols:
-        raise KeyError(f"Protocol '{protocol_name}' not found in YAML. Available: {list(protocols.keys())}")
+    # if protocol_name not in protocols:
+    #     raise KeyError(f"Protocol '{protocol_name}' not found in YAML. Available: {list(protocols.keys())}")
 
-    # Get specific protocol info
+    # # Get specific protocol info
     
-    specific_protocol = protocols[protocol_name]
-    print(f"Selected protocol '{protocol_name}':", specific_protocol)
+    # specific_protocol = protocols[protocol_name]
+    # print(f"Selected protocol '{protocol_name}':", specific_protocol)
 
-    # print("Registered the following locations to the blackboard:")
-    for key, value in specific_protocol.items():
-        blackboard.set(key, value)
+    # # print("Registered the following locations to the blackboard:")
+    # for key, value in specific_protocol.items():
+    #     blackboard.unset(key)
     
-    return blackboard
-
-def remove_protocol_info_from_bb(yaml_path: str, protocol_name: str):
-    """
-    Remove protocol related data from py_trees blackboard.
-    """
-    # Get blackboard
-    blackboard = py_trees.blackboard.Blackboard()
-    
-    # Load YAML
-    with open(yaml_path, 'r') as file:
-        data = yaml.safe_load(file)
-
-    # Ensure structure is correct
-    if "protocols" not in data or "TwoReminderProtocol" not in data["protocols"]:
-        raise KeyError("YAML must contain protocols -> TwoReminderProtocol structure.")
-    
-    protocols = data["protocols"]["TwoReminderProtocol"]
-    
-    # Check protocol_name is valid
-    if not protocol_name:
-        raise ValueError("protocol_name is empty. Please specify one (e.g., 'medicine_am').")
-    
-    if protocol_name not in protocols:
-        raise KeyError(f"Protocol '{protocol_name}' not found in YAML. Available: {list(protocols.keys())}")
-
-    # Get specific protocol info
-    
-    specific_protocol = protocols[protocol_name]
-    print(f"Selected protocol '{protocol_name}':", specific_protocol)
-
-    # print("Registered the following locations to the blackboard:")
-    for key, value in specific_protocol.items():
-        blackboard.unset(key)
-    
-    return blackboard
+    # return blackboard
 
 class TwoReminderProtocolTree(BaseTreeRunner):      
     def __init__(self, node_name: str, robot_interface=None, **kwargs):
@@ -122,56 +79,47 @@ class TwoReminderProtocolTree(BaseTreeRunner):
             the root of the tree
         """
         
-        blackboard = py_trees.blackboard.Blackboard()
         
-        print("\n Blackboard updated:")
-        print(f"  first_text: {blackboard.get('first_text')}")
-        print(f"  second_text: {blackboard.get('second_text')}")
-    
-        first_text = blackboard.get('first_text')
-        second_text = blackboard.get('second_text')
+        protocol_name = self.kwargs.get("protocol_name", "")
+   
+        if protocol_name  == "":
+            raise ValueError("protocol_name is empty. Please specify one (e.g., 'medicine_am').")
         
-        # Initialize subtrees
-        # move_to_person_tree = MoveToPersonLocationTree(node_name="move_to_person")
-        # move_to_person = move_to_person_tree.create_tree()
-
-        move_to_person_tree_1 = MoveToPersonLocationTree(node_name="move_to_person_1", robot_interface=self.robot_interface)
-        move_to_person_1 = move_to_person_tree_1.create_tree()
+        # Conditional wrappers
+        text_1 = "first_text"
+        read_script_1_with_check = py_trees.composites.Selector("Run First Script if needed", memory=True)
+        condition_1 = CheckProtocolBB(
+            name="Should Run First Script?",
+            key=f"{protocol_name}_done.{text_1}_done",
+            expected_value=True,
+        )
         
-        move_to_person_tree_2 = MoveToPersonLocationTree(node_name="move_to_person_2", robot_interface=self.robot_interface)
-        move_to_person_2 = move_to_person_tree_2.create_tree()
+        read_script_tree_1 = ReadScriptTree(node_name=f"{self.node_name}_read_second_script", robot_interface=self.robot_interface)
+        read_script_reminder_1 = read_script_tree_1.create_tree(protocol_name=protocol_name,text_number=text_1, wait_time=5.0)
         
-        # charge_robot_tree = ChargeRobotTree(node_name="charge_robot")
-        # charge_robot = charge_robot_tree.create_tree()
+        read_script_1_with_check.add_children([condition_1, read_script_reminder_1])
         
-        charge_robot_tree_1 = ChargeRobotTree(node_name="charge_robot_1", robot_interface=self.robot_interface)
-        charge_robot_1 = charge_robot_tree_1.create_tree()
+        text_2 = "second_text"
+        read_script_2_with_check = py_trees.composites.Selector("Run Second Script if needed", memory=True)
+        condition_2 = CheckProtocolBB(
+            name="Should Run Second Script?",
+            key=f"{protocol_name}_done.{text_2}_done",
+            expected_value=True,
+        )
         
-        charge_robot_tree_2 = ChargeRobotTree(node_name="charge_robot_2", robot_interface=self.robot_interface)
-        charge_robot_2 = charge_robot_tree_2.create_tree()
-
-
-        # Custom behaviors
-        read_script_reminder_1 = read_script.ReadScript(name="read_script_first_reminder", text=first_text)
-        read_script_reminder_2 = read_script.ReadScript(name="read_script_second_reminder", text=second_text)
-        wait_behavior = wait.Wait(name="wait", duration_in_sec=5.0)
+        read_script_tree_2 = ReadScriptTree(node_name=f"{self.node_name}_read_second_script", robot_interface=self.robot_interface)
+        read_script_reminder_2 = read_script_tree_2.create_tree(protocol_name=protocol_name,text_number=text_2) ## dont want to wait after second script
+        read_script_2_with_check.add_children([condition_2, read_script_reminder_2])
         
-        # play_audio = play_audio.PlayAudio(name="play_audio", file="food_reminder.mp3")
-        # reboot_robot = RebootRobot(name="reboot_robot")
+        # # play_audio = play_audio.PlayAudio(name="play_audio", file="food_reminder.mp3")
 
         # Root sequence
         root_sequence = py_trees.composites.Sequence(name="TwoReminderSequence", memory=True)
 
         # Add behaviors in order
         root_sequence.add_children([
-            move_to_person_1,
-            read_script_reminder_1,
-            charge_robot_1,
-            wait_behavior,
-            move_to_person_2,  # move again
-            read_script_reminder_2,
-            charge_robot_2,    # charge again
-            # reboot_robot,
+            read_script_1_with_check,
+            read_script_2_with_check,
         ])
 
         return root_sequence
@@ -201,6 +149,8 @@ def main(args=None):
     
     yaml_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
     
+    blackboard = py_trees.blackboard.Blackboard()
+    
     ## test loading and removing from blackboard
     # load_protocol_info_from_bb(yaml_path, protocol_name)
     
@@ -217,8 +167,8 @@ def main(args=None):
     #     print("not in blackboard")
     ## finish loading and removing from blackboard
     
-    load_protocol_info_from_bb(yaml_path, protocol_name)
-    
+    load_locations_to_blackboard(yaml_path)
+    load_protocols_to_bb(yaml_path)
     
     tree_runner = TwoReminderProtocolTree(
         node_name="two_reminder_protocol_tree",
@@ -233,7 +183,9 @@ def main(args=None):
         else:
             tree_runner.run_until_done()
     finally:
-        remove_protocol_info_from_bb(yaml_path, protocol_name)
+        for key, value in blackboard.storage.items():
+            print(f"{key} : {value}")
+    
         tree_runner.cleanup()
 
     rclpy.shutdown()

@@ -91,7 +91,8 @@ class MoveToPersonLocationTree(BaseTreeRunner):
 def str2bool(v):
     return str(v).lower() in ('true', '1', 't', 'yes')
 
-def main(args=None):    
+
+def main(args=None):        
     parser = argparse.ArgumentParser(
         description="""Move to Person Location Behavior Tree 
         
@@ -112,6 +113,7 @@ def main(args=None):
 
     tree_runner = MoveToPersonLocationTree(
         node_name="move_to_person_location_tree",
+        num_attempts=args.num_attempts
     )
     ## now run in init
     tree_runner.setup()
@@ -127,6 +129,51 @@ def main(args=None):
 
     rclpy.shutdown()
 
+def main_with_stopping(args=None):  
+    import threading
+      
+    parser = argparse.ArgumentParser(
+        description="""Move to Person Location Behavior Tree 
+        
+        Handles automatic robot charging sequence:
+        1. Gets person location
+        2. moves to postion
+        3. checks if robot and person are in same location
+        4. Retries up to num_attempts times if needed
+                """,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument("--num_attempts", type=int, default=5, help="Docking retry attempts (default: 5)")
+
+
+    args, unknown = parser.parse_known_args()
+
+    tree_runner = MoveToPersonLocationTree(
+        node_name="move_to_person_location_tree",
+        num_attempts=args.num_attempts
+    )
+    ## now run in init
+    tree_runner.setup()
+    
+    runner_thread = threading.Thread(target=tree_runner.run_until_done, daemon=True)
+    runner_thread.start()
+
+    print("Press 's' + Enter to stop the tree.\n")
+    try:
+        while not tree_runner._stop_tree:
+            user_input = input()
+            if user_input.strip().lower() == 's':
+                print("Stopping tree...")
+                tree_runner.stop_tree()
+                break
+    finally:
+        runner_thread.join(timeout=5)
+        print("####### Tree finished with:", tree_runner.final_status)
+        tree_runner.cleanup()
+        rclpy.shutdown()
+
+    
 
 if __name__ == "__main__":
-    main()
+    main_with_stopping()

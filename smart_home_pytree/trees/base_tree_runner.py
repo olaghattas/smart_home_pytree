@@ -41,18 +41,20 @@ class BaseTreeRunner:
         self.launch_service = None
         yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
         
-        
-        load_locations_to_blackboard(yaml_file_path)
+        self.nodes_cleanup_done = False 
+        # load_locations_to_blackboard(yaml_file_path)
         self.rclpy_initialized_here = None
         self._stop_tree = False
-        
+        self.robot_interface_initialized_here = None
         if robot_interface is None:
             print("initialize robot interface")
             self.robot_interface=get_robot_interface()
+            self.robot_interface_initialized_here = True
         else:
             print("NOTICE: USING PROVIDED ROBOT INTERFACE")
-            print("THIS IS ONLY DONE FOR TESTING UNLESS YOU MEANT TO DO IT")
+            # print("THIS IS ONLY DONE FOR TESTING UNLESS YOU MEANT TO DO IT")
             self.robot_interface=robot_interface
+            self.robot_interface_initialized_here = False
             
         # self.setup()
     
@@ -149,6 +151,9 @@ class BaseTreeRunner:
     
     def run_until_done(self):
         """Run until the tree finishes with SUCCESS or FAILURE."""
+        
+        ## make sure to overwrite stop flag
+        self._stop_tree = False
         self.final_status = py_trees.common.Status.FAILURE # initialize
         def tick_tree_until_done(timer):
             try:
@@ -187,13 +192,26 @@ class BaseTreeRunner:
         try:
             while not self._stop_tree:
                 self.executor_.spin_once(timeout_sec=0.1)
+            
+            print("tree_timer.is_canceled(): ", tree_timer.is_canceled())
+            if not tree_timer.is_canceled():
+                print("Cancelling timer after stop signal")
+                print("failing the tree")
+                self.final_status = py_trees.common.Status.INVALID
+                self.tree.root.stop(self.final_status)
+                tree_timer.cancel()
+                self.nodes_cleanup()
+                
             print("stop spinning")  
         except (KeyboardInterrupt, rclpy.executors.ExternalShutdownException):
             console.logwarn("Executor interrupted.")
         finally:
             return self.final_status
         
-
+    def stop_tree(self):
+        """Signal to stop the tree execution."""
+        self._stop_tree = True
+        
     def run_continuous(self):
         """Run the tree continuously until user stops."""
         self.tree.tick_tock(period_ms=1000.0)
@@ -204,17 +222,16 @@ class BaseTreeRunner:
         finally:
             self.cleanup()
 
-    def cleanup(self, exit_code=0):
-        """Clean shutdown of all nodes, executors, and subprocesses."""
-        print("cleanup")
-        try:
+    def nodes_cleanup(self):
+        """Clean up the tree node."""
+        try:                
             print("self.tree",self.tree)
             if self.tree:
                 print("self.tree shutdown ")
                 self.tree.shutdown()
                 
-            print("self.robot_interface",self.robot_interface)
-            if self.robot_interface:
+            print("self.robot_interface_initialized_here: ",self.robot_interface_initialized_here)
+            if self.robot_interface and self.robot_interface_initialized_here:
                 print("self.robot_interface shutdown ")
                 self.robot_interface.shutdown()
 
@@ -222,7 +239,18 @@ class BaseTreeRunner:
             if self.executor_ :
                 print("self.executor_ shutdown ")
                 self.executor_.shutdown()
-           
+            
+            self.nodes_cleanup_done = True  
+        except Exception as e:
+            print(f"Node cleanup failed: {e}")
+            
+    def cleanup(self, exit_code=0):
+        """Clean shutdown of all nodes, executors, and subprocesses."""
+        try:
+            print("self.nodes_cleanup_done", self.nodes_cleanup_done)
+            if not self.nodes_cleanup_done:
+                print("##### Cleaning up nodes #####")
+                self.nodes_cleanup()
                 
             # Shutdown ROS2
             print("Self.rclpy_initialized_here", self.rclpy_initialized_here)

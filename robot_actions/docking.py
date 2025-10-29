@@ -33,11 +33,11 @@ class DockingActionServer(Node):
         # Ask user whether to succeed or fail
         user_input = input("Docking goal received. Type 'y' to succeed, 'n' to fail: ").strip().lower()
 
-        feedback_msg = DockingRequest.Feedback()
+        # feedback_msg = DockingRequest.Feedback()
 
         # Publish one feedback to show it's working
-        goal_handle.publish_feedback(feedback_msg)
-        self.get_logger().info('Feedback sent.')
+        # goal_handle.publish_feedback(feedback_msg)
+        # self.get_logger().info('Feedback sent.')
 
         if user_input == 'y':
             goal_handle.succeed()
