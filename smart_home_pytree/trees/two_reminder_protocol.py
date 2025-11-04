@@ -128,6 +128,7 @@ class TwoReminderProtocolTree(BaseTreeRunner):
 def str2bool(v):
     return str(v).lower() in ('true', '1', 't', 'yes')
 
+import os
 def main(args=None):    
     parser = argparse.ArgumentParser(
         description="""Two Reminder Protocol Tree 
@@ -147,7 +148,8 @@ def main(args=None):
     protocol_name = args.protocol_name
     print("protocol_name: ", protocol_name)
     
-    yaml_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
+    # yaml_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
+    yaml_file_path = os.getenv("house_yaml_path", None) 
     
     blackboard = py_trees.blackboard.Blackboard()
     
@@ -167,8 +169,8 @@ def main(args=None):
     #     print("not in blackboard")
     ## finish loading and removing from blackboard
     
-    load_locations_to_blackboard(yaml_path)
-    load_protocols_to_bb(yaml_path)
+    load_locations_to_blackboard(yaml_file_path)
+    load_protocols_to_bb(yaml_file_path)
     
     tree_runner = TwoReminderProtocolTree(
         node_name="two_reminder_protocol_tree",
@@ -193,3 +195,6 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
+    
+    
+# python3 two_reminder_protocol.py --protocol_name medicine_am

@@ -24,14 +24,14 @@ import threading
 ## run_simulator true to run the turtlebot simulator for the /navigate_to_pose
 from smart_home_pytree.robot_interface import get_robot_interface
 import time 
-
+import os
 class BaseTreeRunner:
     """
     Base class for running behavior trees in a modular way.
     Subclasses must override `create_tree()`.
     """
 
-    def __init__(self, node_name: str, setup = False, robot_interface = None, **kwargs):
+    def __init__(self, node_name: str, test_mode = False, robot_interface = None, **kwargs):
         self.node_name = node_name
         self.executor_ = None
         self.tree = None
@@ -39,13 +39,16 @@ class BaseTreeRunner:
         self.kwargs = kwargs   # store extra args for flexibility
         self.tb3_process = None
         self.launch_service = None
-        yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
+        
+        yaml_file_path = os.getenv("house_yaml_path", None) 
+        # yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
         
         self.nodes_cleanup_done = False 
-        # load_locations_to_blackboard(yaml_file_path)
+        load_locations_to_blackboard(yaml_file_path)
         self.rclpy_initialized_here = None
         self._stop_tree = False
         self.robot_interface_initialized_here = None
+        
         if robot_interface is None:
             print("initialize robot interface")
             self.robot_interface=get_robot_interface()
@@ -57,7 +60,7 @@ class BaseTreeRunner:
             self.robot_interface_initialized_here = False
             
         # self.setup()
-    
+
     def required_actions(self) -> dict:
         """
         Subclasses can override this to define required actions.
@@ -136,7 +139,7 @@ class BaseTreeRunner:
             root=self.root,
             unicode_tree_debug=True
         )
-
+        
         try:
             self.tree.setup(node_name=self.node_name, timeout=15.0)
         except py_trees_ros.exceptions.TimedOutError as e:
@@ -146,8 +149,8 @@ class BaseTreeRunner:
             console.logerror("Tree setup interrupted.")
             self.cleanup(exit_code=1)
 
-
         self.executor_.add_node(self.tree.node)
+        self.count = 0
     
     def run_until_done(self):
         """Run until the tree finishes with SUCCESS or FAILURE."""
@@ -157,10 +160,14 @@ class BaseTreeRunner:
         self.final_status = py_trees.common.Status.FAILURE # initialize
         def tick_tree_until_done(timer):
             try:
+                print("TICKK COUNT: ", self.count)
+                self.count = self.count+1
                 self.tree.root.tick_once()
-                print("=" * 25 + " TREE STATE " + "=" * 25)
-                print(display.unicode_tree(root=self.tree.root, show_status=True))
-                print("\n")
+                
+                # print("=" * 25 + " TREE STATE " + "=" * 25)
+                # print(display.unicode_tree(root=self.tree.root, show_status=True))
+                # print("\n")
+                
             except Exception as e:
                 import traceback
                 print(" Exception during tick:")

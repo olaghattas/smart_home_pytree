@@ -13,6 +13,11 @@ from ..mock.mock_action_server import BaseMockActionServer
 import time
 from smart_home_pytree.robot_interface import RobotInterface
 
+### 
+
+# CAREFUL NOT TO RUN TOPICS AND ACTIONS IN THE BACKGROUND 
+
+###
 # --- Global references for teardown ---
 robot_interface = None
 
@@ -55,7 +60,7 @@ def test_move_to_location_tree_success():
     )
     
     mock_undock_server = BaseMockActionServer(
-        action_name='/undock',
+        action_name='/undocking',
         action_type=DockingRequest,
         result_cls=DockingRequest.Result,
         succeed=True,
@@ -117,7 +122,7 @@ def test_move_to_location_tree_navigation_fail():
         wait_time=0.5
     )
     mock_undock_server = BaseMockActionServer(
-        action_name='/undock',
+        action_name='/undocking',
         action_type=DockingRequest,
         result_cls=DockingRequest.Result,
         succeed=True,
@@ -173,7 +178,7 @@ def test_move_to_location_tree_charging_undock_fail():
         wait_time=0.5
     )
     mock_undock_server = BaseMockActionServer(
-        action_name='/undock',
+        action_name='/undocking',
         action_type=DockingRequest,
         result_cls=DockingRequest.Result,
         succeed=False,  # UNDOCK FAIL
@@ -200,6 +205,7 @@ def test_move_to_location_tree_charging_undock_fail():
     move_tree.setup()
 
     result = move_tree.run_until_done()
+    print("result: ", result)
     assert result == py_trees.common.Status.FAILURE, f"Expected FAILURE but got {result}"
 
     executor.shutdown(); thread.join()
@@ -222,7 +228,7 @@ def test_move_to_location_tree_uncharging_undock_fail():
         wait_time=0.5
     )
     mock_undock_server = BaseMockActionServer(
-        action_name='/undock',
+        action_name='/undocking',
         action_type=DockingRequest,
         result_cls=DockingRequest.Result,
         succeed=False,  # UNDOCK FAIL
@@ -257,15 +263,16 @@ def test_move_to_location_tree_uncharging_undock_fail():
     move_tree.setup()
 
     result = move_tree.run_until_done()
-    assert result == py_trees.common.Status.SUCCESS, f"Expected FAILURE but got {result}"
+    print("result: ", result)
+    assert result == py_trees.common.Status.SUCCESS, f"Expected SUCCESS but got {result}"
 
     executor.shutdown(); executor_thread.join()
     mock_nav_server.destroy_node(); mock_undock_server.destroy_node()
     move_tree.cleanup()
     
-if __name__ == "__main__":
-    # test_move_to_location_tree_success()
-    test_move_to_location_tree_navigation_fail()
+# if __name__ == "__main__":
+#     # test_move_to_location_tree_success()
+#     test_move_to_location_tree_navigation_fail()
     
     
 # to run : python3 -m test.unit.test_move_to_tree in /home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree

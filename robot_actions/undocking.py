@@ -12,7 +12,7 @@ import os
 
 class DockingActionServer(GenericActionServer):
     def __init__(self):
-        super().__init__(DockingRequest, "undock")
+        super().__init__(DockingRequest, "undocking")
         
         self.vel_pub = self.create_publisher(Twist, os.getenv("cmd_vel"), 10)
 

@@ -30,7 +30,7 @@ class BaseMockActionServer(Node):
         self._result_cls = result_cls
         self._wait_time = wait_time
 
-        self._check_period = 1
+        self._check_period = 0.1
         # Create the Action Server
         self._action_server = ActionServer(
             self,
@@ -45,7 +45,22 @@ class BaseMockActionServer(Node):
             f"Mock action server '{action_name}' ready "
             f"(succeed={succeed}, cancel={cancel}, wait_time={wait_time}s)"
         )
+        
+        self._action_name = action_name
+        
+        # tracking attributes for testing
+        self.triggered = False              # whether this action was called
+        self.completed = False              # whether it finished
+        self.result_status = None           # "canceled", "succeeded", 
+        self.trigger_time = None            # when it started
+        self.complete_time = None           # when it ended
 
+        self.on_trigger_callback = None 
+        
+    def set_on_trigger(self, callback):
+        """Register a function to be called when this action is triggered."""
+        self.on_trigger_callback = callback
+        
     def goal_callback(self, goal_request):
         """Handle incoming goal requests."""
         self.get_logger().info('Goal received.')
@@ -59,8 +74,13 @@ class BaseMockActionServer(Node):
     
     def execute_callback(self, goal_handle):
         self.get_logger().info(f"Executing goal, emulating {self._wait_time}s duration...")
-        start = time.time()
+        self.triggered = True
 
+        self.trigger_time = time.time()
+        
+        if self.on_trigger_callback:
+            self.on_trigger_callback(self._action_name)
+            
         # Wait in small increments so we can respond to cancel requests
         elapsed = 0.0
         while elapsed < self._wait_time:
@@ -68,22 +88,30 @@ class BaseMockActionServer(Node):
                 self.get_logger().info('Goal canceled by client.')
                 goal_handle.canceled()
                 result = self._result_cls()
+                self.result_status = "canceled"
+                self.completed = True
+                self.complete_time = time.time()
                 return result
 
             time.sleep(self._check_period)  # non-blocking-ish delay
-            elapsed = time.time() - start
+            elapsed = time.time() - self.trigger_time
 
         # Post-wait: determine outcome
         if self._cancel:
+            self.result_status = "canceled"
             self.get_logger().info('Simulating server-side cancellation.')
             goal_handle.canceled()
         elif self._succeed:
+            self.result_status = "succeeded"
             self.get_logger().info('Simulating goal success.')
             goal_handle.succeed()
         else:
+            self.result_status = "failure"
             self.get_logger().info('Simulating goal failure.')
             goal_handle.abort()
 
+        self.complete_time = time.time()
         result = self._result_cls()
+        self.completed = True
         return result
 

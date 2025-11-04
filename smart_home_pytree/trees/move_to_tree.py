@@ -83,7 +83,7 @@ class MoveToLocationTree(BaseTreeRunner):
         undock_robot = py_trees_ros.actions.ActionClient(
             name="Undock_Robot",
             action_type=DockingRequest,
-            action_name="undock",
+            action_name="undocking",
             action_goal=undocking_goal,
             wait_for_server_timeout_sec=120.0
         )   
@@ -94,6 +94,7 @@ class MoveToLocationTree(BaseTreeRunner):
         move_to_position = MoveToLandmark(self.robot_interface, location=location, location_key=location_key)
         
         # move_to_position = py_trees.behaviours.Success(name="Move_to_Pose_Success")  # Placeholder for actual move action
+        
         root.add_child(move_to_position)
         return root
     

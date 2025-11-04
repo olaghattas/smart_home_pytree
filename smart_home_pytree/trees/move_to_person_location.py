@@ -53,6 +53,12 @@ class MoveToPersonLocationTree(BaseTreeRunner):
         # Build the behavior tree
         
         ## Get person location
+        get_person_room_pre = GetPersonLocation(self.robot_interface)
+        
+        # Move only if not already in the same room
+        move_if_not_same_loc = py_trees.composites.Selector(name="MoveIfNotSameLoc", memory=True)
+        robot_same_room_pre = RobotPersonSameLocation(self.robot_interface)
+        
         get_person_room = GetPersonLocation(self.robot_interface)
         
         ## get_person_room would give failure if person_location is not set or not valid
@@ -62,11 +68,11 @@ class MoveToPersonLocationTree(BaseTreeRunner):
             location_key = "person_location"
         )
         move_to_room = move_to_home_tree.create_tree()
-        
-        robot_same_room = RobotPersonSameLocation(self.robot_interface)
+        robot_same_room_post = RobotPersonSameLocation(self.robot_interface)
     
         go_to_person_sequence = py_trees.composites.Sequence("GotoPersonRoutine", memory=True)
-        go_to_person_sequence.add_children([get_person_room, move_to_room, robot_same_room])
+        go_to_person_sequence.add_children([get_person_room, move_to_room, robot_same_room_post])
+        # get_person_room is used within the retry in case the person moves location
         
         go_to_person_sequence_with_retry = py_trees.decorators.Retry(
             name="Go to Person Sequence with Retry",
@@ -74,7 +80,8 @@ class MoveToPersonLocationTree(BaseTreeRunner):
             num_failures=num_attempts
         )
         
-        root.add_child(go_to_person_sequence_with_retry)
+        move_if_not_same_loc.add_children([robot_same_room_pre ,go_to_person_sequence_with_retry])
+        root.add_children([get_person_room_pre, move_if_not_same_loc])
         
         return root
     

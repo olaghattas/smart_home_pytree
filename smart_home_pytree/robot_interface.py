@@ -75,7 +75,6 @@ class RobotInterface(Node):
         self.create_subscription(Bool, 'protocol_1', self.protocol_1_callback, 10)
         self.create_subscription(Bool, 'protocol_2', self.protocol_2_callback, 10)
 
-
         # Background spinning thread
         self._stop_event = threading.Event()
         self.spin_thread = threading.Thread(target=self._spin_background, daemon=True)
@@ -96,7 +95,7 @@ class RobotInterface(Node):
         self.spin_thread.join(timeout=1.0)
         self.destroy_node()
         self.get_logger().info("RobotInterface shutdown complete.")
-
+        
     # --- Callbacks ---
     def robot_location_callback(self, msg):
         self.get_logger().debug(f"Robot location: {msg.data}")

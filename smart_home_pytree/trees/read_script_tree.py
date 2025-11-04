@@ -1,24 +1,19 @@
-import py_trees
-from shr_msgs.action import DockingRequest
-import py_trees.console as console
-import rclpy
-import py_trees_ros
-import operator
+#!/usr/bin/env python3
 
-from smart_home_pytree.behaviors.check_robot_state_key import CheckRobotStateKey
-from smart_home_pytree.behaviors.logging_behavior import LoggingBehavior
-from smart_home_pytree.behaviors.check_robot_state_key import CheckRobotStateKey
-from smart_home_pytree.robot_interface import RobotInterface
+import py_trees
+
+import rclpy
+
+
 from smart_home_pytree.trees.base_tree_runner import BaseTreeRunner
-from smart_home_pytree.trees.move_to_tree import MoveToLocationTree
-import yaml
+
 import argparse
-from smart_home_pytree.behaviors.action_behaviors import play_audio, read_script, wait
+from smart_home_pytree.behaviors.action_behaviors import read_script, wait
 from smart_home_pytree.trees.move_to_person_location import MoveToPersonLocationTree
 from smart_home_pytree.trees.charge_robot_tree import ChargeRobotTree
 from smart_home_pytree.behaviors.set_protocol_bb import SetProtocolBB
          
-#!/usr/bin/env python3
+
 
 """
 
@@ -26,6 +21,7 @@ This script is responsible for reading a script to the person at their location 
 
 """
 
+##### NOTE:  MAIN NEEDS TESTING
 class ReadScriptTree(BaseTreeRunner):      
     def __init__(self, node_name: str, robot_interface=None, **kwargs):
         """
@@ -114,6 +110,7 @@ class ReadScriptTree(BaseTreeRunner):
 def str2bool(v):
     return str(v).lower() in ('true', '1', 't', 'yes')
 
+import os
 def main(args=None):    
     parser = argparse.ArgumentParser(
         description="""Two Reminder Protocol Tree 
@@ -133,13 +130,14 @@ def main(args=None):
     protocol_name = args.protocol_name
     print("protocol_name: ", protocol_name)
     
-    yaml_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
+    # yaml_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
     
-    load_protocol_info_from_bb(yaml_path, protocol_name)
+    yaml_file_path = os.getenv("house_yaml_path", None) 
+    load_protocol_info_from_bb(yaml_file_path, protocol_name)
     
     
-    tree_runner = TwoReminderProtocolTree(
-        node_name="two_reminder_protocol_tree",
+    tree_runner = ReadScriptTree(
+        node_name="read_script_tree",
         protocol_name=protocol_name,
     )
     tree_runner.setup()
@@ -151,7 +149,7 @@ def main(args=None):
         else:
             tree_runner.run_until_done()
     finally:
-        remove_protocol_info_from_bb(yaml_path, protocol_name)
+        remove_protocol_info_from_bb(yaml_file_path, protocol_name)
         tree_runner.cleanup()
 
     rclpy.shutdown()

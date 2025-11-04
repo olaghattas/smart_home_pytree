@@ -1,13 +1,18 @@
 import pytest
 import py_trees
-from smart_home_pytree.util_behaviors import GetPersonLocation
+from smart_home_pytree.behaviors.get_person_location import GetPersonLocation
 from smart_home_pytree.registry import load_locations_to_blackboard
+import os
 
+class RobotInterface:
+    def __init__(self, state):
+        self.state = state
 
 @pytest.fixture(scope="module")
 def setup_blackboard():
     """Fixture to load the house locations into the blackboard."""
-    yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
+    # yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
+    yaml_file_path = os.getenv("house_yaml_path", None) 
     load_locations_to_blackboard(yaml_file_path)
     blackboard = py_trees.blackboard.Blackboard()
     return blackboard
@@ -22,9 +27,10 @@ def test_person_location_valid(setup_blackboard):
     # Simulate blackboard and state
     blackboard.set("person_location", loc)
     state = {"person_location": loc}
+    robot_interface = RobotInterface(state)
 
     # Run GetPersonLocation
-    get_person_loc = GetPersonLocation(state)
+    get_person_loc = GetPersonLocation(robot_interface)
     status = get_person_loc.update()
 
     # Expected behavior
@@ -38,8 +44,10 @@ def test_person_location_not_registered(setup_blackboard):
     loc = "garage"  # Not in YAML
     state = {"person_location": loc}
 
+    robot_interface = RobotInterface(state)
+    
     blackboard.set("person_location", loc)
-    get_person_loc = GetPersonLocation(state)
+    get_person_loc = GetPersonLocation(robot_interface)
     status = get_person_loc.update()
 
     assert status == py_trees.common.Status.FAILURE
@@ -49,8 +57,9 @@ def test_person_location_none(setup_blackboard):
     """Test when the person location is None."""
     blackboard = setup_blackboard
     state = {"person_location": None}
-
-    get_person_loc = GetPersonLocation(state)
+    robot_interface = RobotInterface(state)
+    
+    get_person_loc = GetPersonLocation(robot_interface)
     status = get_person_loc.update()
 
     assert status == py_trees.common.Status.FAILURE
@@ -59,7 +68,9 @@ def test_person_location_none(setup_blackboard):
 def test_person_location_missing_key(setup_blackboard):
     """Test when the state dictionary does not contain the key 'person_location'."""
     state = {}  # Missing key
-    get_person_loc = GetPersonLocation(state)
+    robot_interface = RobotInterface(state)
+    
+    get_person_loc = GetPersonLocation(robot_interface)
     status = get_person_loc.update()
 
     assert status == py_trees.common.Status.FAILURE

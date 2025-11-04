@@ -9,6 +9,15 @@ cd ~/smart_home_pytree_ws/src
 git clone https://github.com/splintered-reality/py_trees
 git clone https://github.com/splintered-reality/py_trees_ros/
 git clone https://github.com/splintered-reality/py_trees_ros_viewer
+git clone https://github.com/splintered-reality/py_trees_ros_interfaces
+git clone https://github.com/olaghattas/smart_home_pytree
+
+cd ~/smart_home_pytree_ws 
+colcon build --symlink-install
+
+the yaml file to be used that contains information about the house should be stored as an env variable under 
+** house_yaml_path**
+
 ```
 
 ## Overview
@@ -74,7 +83,7 @@ contains the action servers needed for the robot:
 Defines the base class for action servers.  
 It raises an error if the derived class does not implement `execute_callback`.  
 
-Currently availbale action servers:
+Currently available action servers:
 mock docking:
 mock undocking: 
 
@@ -108,6 +117,7 @@ It raises an error if the derived class does not implement `create_tree()`.
 - **`run_until_done()`** – Runs the tree until it finishes with either `SUCCESS` or `FAILURE`.  
 - **`run_continuous()`** – Runs the tree continuously until the user stops it.  
 - **`cleanup()`** – Ensures a clean shutdown of all nodes, executors, and subprocesses.
+- **`stop()`** – Stops the tree.
 
 **Helper functions:**
 - **`required_actions()`** – Should be overridden in the derived class.  

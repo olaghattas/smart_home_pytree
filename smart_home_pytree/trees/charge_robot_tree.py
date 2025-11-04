@@ -102,7 +102,7 @@ class ChargeRobotTree(BaseTreeRunner):
         dock_robot = py_trees_ros.actions.ActionClient(
             name="Dock_Robot",
             action_type=DockingRequest,
-            action_name="dock",
+            action_name="docking",
             action_goal=docking_goal,
             wait_for_server_timeout_sec=120.0
         )
@@ -189,11 +189,20 @@ def main(args=None):
             tree_runner.run_continuous()
         else:
             tree_runner.run_until_done()
+            print("##################")
+            print("\nTICK HISTORY:\n", tree_runner._tick_history)
     finally:
         # robot_interface.shutdown()
         tree_runner.cleanup()
+        
+    # Examine collected feedback
+    
+
     rclpy.shutdown()
 
 
 if __name__ == "__main__":
     main()
+    
+# python3 charge_robot_tree.py --num_attempts 4
+    
