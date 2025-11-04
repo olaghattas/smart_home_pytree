@@ -17,6 +17,7 @@ import argparse
 from smart_home_pytree.trees.read_script_tree import ReadScriptTree
 from smart_home_pytree.registry import load_locations_to_blackboard, load_protocols_to_bb
 from smart_home_pytree.behaviors.check_protocol_bb import CheckProtocolBB
+
 ## todo check if needed.
 # def remove_protocol_info_from_bb(yaml_path: str, protocol_name: str):
     # """
@@ -94,8 +95,9 @@ class TwoReminderProtocolTree(BaseTreeRunner):
             expected_value=True,
         )
         
+        wait_time_key = "wait_time_between_reminders"
         read_script_tree_1 = ReadScriptTree(node_name=f"{self.node_name}_read_second_script", robot_interface=self.robot_interface)
-        read_script_reminder_1 = read_script_tree_1.create_tree(protocol_name=protocol_name,text_number=text_1, wait_time=5.0)
+        read_script_reminder_1 = read_script_tree_1.create_tree(protocol_name=protocol_name,text_number=text_1, wait_time_key=wait_time_key)
         
         read_script_1_with_check.add_children([condition_1, read_script_reminder_1])
         
@@ -169,7 +171,8 @@ def main(args=None):
     #     print("not in blackboard")
     ## finish loading and removing from blackboard
     
-    load_locations_to_blackboard(yaml_file_path)
+    # done in base class 
+    # load_locations_to_blackboard(yaml_file_path)
     load_protocols_to_bb(yaml_file_path)
     
     tree_runner = TwoReminderProtocolTree(

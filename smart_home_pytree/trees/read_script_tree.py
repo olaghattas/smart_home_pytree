@@ -23,7 +23,10 @@ This script is responsible for reading a script to the person at their location 
 
 ##### NOTE:  MAIN NEEDS TESTING
 class ReadScriptTree(BaseTreeRunner):      
-    def __init__(self, node_name: str, robot_interface=None, **kwargs):
+    def __init__(self, node_name: str, robot_interface=None,
+        protocol_name: str = None,  ## for tests
+        text_number: str = None,
+        wait_time_key: str = None, **kwargs):
         """
         Initialize the TwoReminderProtocol.
 
@@ -37,7 +40,14 @@ class ReadScriptTree(BaseTreeRunner):
             **kwargs
         )
     
-    def create_tree(self, protocol_name: str, text_number: str, wait_time: float = 0.0) -> py_trees.behaviour.Behaviour:
+        # Store optional configuration ONLY USED FOR TESTING
+        self.protocol_name = protocol_name
+        self.text_number = text_number
+        self.wait_time_key = wait_time_key
+        
+    def create_tree(self, protocol_name: str = None,
+        text_number: str = None,
+        wait_time_key: str = None) -> py_trees.behaviour.Behaviour:
         """
         Creates the TwoReminderProtocol tree:
         Sequence:
@@ -52,6 +62,7 @@ class ReadScriptTree(BaseTreeRunner):
             medicine_am:
                 first_text: "please take your morning medicine"
                 second_text: "This is the second reminder to take your morning medicine"
+                
             medicine_pm:
                 first_text: "please take your night medicine"
                 second_text: "This is the second reminder to take your night medicine"
@@ -59,10 +70,26 @@ class ReadScriptTree(BaseTreeRunner):
         Returns:
             the root of the tree
         """
-        blackboard = py_trees.blackboard.Blackboard()
         
+        blackboard = py_trees.blackboard.Blackboard()
         protocol_info = blackboard.get(protocol_name)
+        
+        # If __init__ already defines values, they take priority.
+        print("self.protocol_name: ", self.protocol_name)
+        print("protocol_name: ", protocol_name)
+        protocol_name = protocol_name or self.protocol_name
+        print("protocol_name: ", protocol_name)
+
+        text_number = text_number or self.text_number 
         text = protocol_info[text_number]
+        
+        if wait_time_key is not None or self.wait_time_key is not None :
+            wait_time_key = wait_time_key or self.wait_time_key
+            wait_time = protocol_info[wait_time_key]
+        else:
+            wait_time_key = ""
+            wait_time = 0.0
+        
         
         move_to_person_tree = MoveToPersonLocationTree(node_name=f"{protocol_name}_move_to_person", robot_interface=self.robot_interface)
         move_to_person = move_to_person_tree.create_tree()
@@ -81,11 +108,13 @@ class ReadScriptTree(BaseTreeRunner):
         set_read_script_success = SetProtocolBB(name = "read_script_set_bb", key=f"{protocol_name}_done.{text_number}_done", value = True)
         
         wait_behavior = wait.Wait(name="wait", duration_in_sec=wait_time)
+        
+        set_wait_success = SetProtocolBB(name = "wait_set_bb", key=f"{protocol_name}_done.{wait_time_key}_done", value = True)
 
         # Root sequence
         root_sequence = py_trees.composites.Sequence(name=f"{protocol_name}_read_script", memory=True)
 
-        if wait_time > 0.0:
+        if wait_time>0:
             # Add behaviors in order
             root_sequence.add_children([
             move_to_person,
@@ -93,6 +122,7 @@ class ReadScriptTree(BaseTreeRunner):
             set_read_script_success,
             charge_robot,
             wait_behavior,
+            set_wait_success,
         ])
             
         else:
@@ -132,8 +162,8 @@ def main(args=None):
     
     # yaml_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
     
-    yaml_file_path = os.getenv("house_yaml_path", None) 
-    load_protocol_info_from_bb(yaml_file_path, protocol_name)
+    # yaml_file_path = os.getenv("house_yaml_path", None) 
+    # load_protocol_info_from_bb(yaml_file_path, protocol_name)
     
     
     tree_runner = ReadScriptTree(
@@ -149,7 +179,7 @@ def main(args=None):
         else:
             tree_runner.run_until_done()
     finally:
-        remove_protocol_info_from_bb(yaml_file_path, protocol_name)
+        # remove_protocol_info_from_bb(yaml_file_path, protocol_name)
         tree_runner.cleanup()
 
     rclpy.shutdown()

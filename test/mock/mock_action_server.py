@@ -89,7 +89,7 @@ class BaseMockActionServer(Node):
                 goal_handle.canceled()
                 result = self._result_cls()
                 self.result_status = "canceled"
-                self.completed = True
+                self.completed = False
                 self.complete_time = time.time()
                 return result
 

@@ -7,7 +7,6 @@ import rclpy
 from rclpy.executors import MultiThreadedExecutor
 import threading
 import py_trees
-from smart_home_pytree.trees.move_to_tree import MoveToLocationTree
 from smart_home_pytree.trees.charge_robot_tree import ChargeRobotTree
 
 # Replace these with your actual action types
@@ -131,11 +130,6 @@ def test_charge_robot_tree_success():
     assert robot_interface.state.get('charging') is True, "Robot should end charging"
     assert mock_dock_server.result_status == "succeeded"
     
-    # shutdown  
-    executor.shutdown();executor_thread.join()
-    mock_nav_server.destroy_node();mock_dock_server.destroy_node();mock_undock_server.destroy_node()
-    charge_robot_tree.cleanup()
-    
     # Cleanup
     executor.shutdown()
     executor_thread.join()
@@ -208,7 +202,6 @@ def test_charge_robot_tree_charging_true():
     assert not mock_dock_server.triggered, "Docking should NOT be triggered if charging=True"
     assert final_status == py_trees.common.Status.SUCCESS, f"Expected SUCCESS but got {final_status}"
     assert robot_interface.state.get('charging') is True, "Robot should not be charging"
-
     
     # Cleanup
     executor.shutdown()
@@ -365,9 +358,6 @@ def test_charge_robot_tree_docking_fails():
     mock_undock_server.destroy_node()
     charge_robot_tree.cleanup()
 
-    
 
-# if __name__ == "__main__":
-#     test_charge_robot_tree_2_success()
 
 # ~/smart_home_pytree_ws/src/smart_home_pytree: run  python3 -m  pytest test/unit/test_charge_robot_tree.py -vv

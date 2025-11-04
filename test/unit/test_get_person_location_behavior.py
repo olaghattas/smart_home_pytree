@@ -53,9 +53,8 @@ def test_person_location_not_registered(setup_blackboard):
     assert status == py_trees.common.Status.FAILURE
 
 
-def test_person_location_none(setup_blackboard):
+def test_person_location_none():
     """Test when the person location is None."""
-    blackboard = setup_blackboard
     state = {"person_location": None}
     robot_interface = RobotInterface(state)
     
@@ -65,7 +64,7 @@ def test_person_location_none(setup_blackboard):
     assert status == py_trees.common.Status.FAILURE
 
 
-def test_person_location_missing_key(setup_blackboard):
+def test_person_location_missing_key():
     """Test when the state dictionary does not contain the key 'person_location'."""
     state = {}  # Missing key
     robot_interface = RobotInterface(state)

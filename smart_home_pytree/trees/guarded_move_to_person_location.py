@@ -80,6 +80,13 @@ class GuardedMoveToPersonLocationTree(BaseTreeRunner):
         num_attempts = self.kwargs.get("num_attempts", 5)
 
         # Build the behavior tree
+        ## Get person location
+        get_person_room_pre = GetPersonLocation(self.robot_interface)
+        
+        # Move only if not already in the same room
+        move_if_not_same_loc = py_trees.composites.Selector(name="MoveIfNotSameLoc", memory=True)
+        robot_same_room_pre = RobotPersonSameLocation(self.robot_interface)
+        
         
         ## Get person location
         get_person_room = GetPersonLocation(self.robot_interface)
@@ -110,7 +117,8 @@ class GuardedMoveToPersonLocationTree(BaseTreeRunner):
             num_failures=num_attempts
         )  
 
-        root.add_child(go_to_person_sequence_with_retry)
+        move_if_not_same_loc.add_children([robot_same_room_pre ,go_to_person_sequence_with_retry])
+        root.add_children([get_person_room_pre, move_if_not_same_loc])
         
         return root
     

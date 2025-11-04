@@ -9,7 +9,6 @@ from smart_home_pytree.trees.move_to_tree import MoveToLocationTree
 from shr_msgs.action import DockingRequest
 from nav2_msgs.action import NavigateToPose
 from ..mock.mock_action_server import BaseMockActionServer
-# from mock.mock_action_client import BaseMockActionClient
 import time
 from smart_home_pytree.robot_interface import RobotInterface
 
@@ -105,7 +104,6 @@ def test_move_to_location_tree_success():
     executor.shutdown();executor_thread.join()
     mock_nav_server.destroy_node();mock_undock_server.destroy_node()
     move_tree.cleanup()
-    
     
 def test_move_to_location_tree_navigation_fail():
     print('-  test_move_to_location_tree_navigation_fail()')

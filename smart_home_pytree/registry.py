@@ -80,8 +80,24 @@ def load_protocols_to_bb(yaml_path: str):
             blackboard.set(protocol_name, protocol_dict)
             blackboard.set(f"{protocol_name}_done", protocol_dict_done)
     
+    for key, value in blackboard.storage.items():
+        print(f"{key} : {value}")
+    
+
+
+    # protocol_name = "medicine_am"
+
     # for key, value in blackboard.storage.items():
-    #     print(f"{key} : {value}")
+    #     # Only print the protocol_done section
+    #     print("key: ", key)
+    #     if key == f"/{protocol_name}_done":
+    #         print(f"\n[{key}]")
+    #         if isinstance(value, dict):
+    #             for sub_key, sub_value in value.items():
+    #                 print(f"  {sub_key}: {sub_value}")
+    #         else:
+    #             print(f"  (Non-dict value): {value}")
+        
     # output:
     # /medicine_am : {'first_text': 'please take your morning medicine', 'second_text': 'This is the second reminder to take your morning medicine'}
     # /medicine_pm : {'first_text': 'please take your night medicine', 'second_text': 'This is the second reminder to take your night medicine'}
@@ -96,6 +112,7 @@ if __name__ == "__main__":
     # yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
     
     yaml_file_path = os.getenv("house_yaml_path", None) 
+    print("yaml_file_path", yaml_file_path)
     bb = load_locations_to_blackboard(yaml_file_path)
     print("bb: ",bb)
     
@@ -110,3 +127,6 @@ if __name__ == "__main__":
     quat_vals = target_location["quat"]
 
     print("x: ", x, " y: ", y, " quat: ", quat_vals)
+    
+    
+    load_protocols_to_bb(yaml_file_path)

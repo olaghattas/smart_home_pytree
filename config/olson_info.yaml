@@ -22,9 +22,11 @@ protocols:
     medicine_am:
       first_text: "please take your morning medicine"
       second_text: "This is the second reminder to take your morning medicine"
+      wait_time_between_reminders: 10
     medicine_pm:
       first_text: "please take your night medicine"
       second_text: "This is the second reminder to take your night medicine"
+      wait_time_between_reminders: 5
 
   # Version2TwoReminderProtocol:
   #   medicine_am:

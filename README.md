@@ -210,7 +210,13 @@ for testing you can use a simple GUI for testing topics is available in:
 
 [running_move_to_tree.webm](https://github.com/user-attachments/assets/70da4dc0-a3cc-47f9-82a3-99c17cc8f576)
 
+## For Testing
+
+Refer to the README.md file in the test folder
 
 ## Relevant Documentation
 
-For more details, see the [py_trees_ros documentation](https://py-trees-ros.readthedocs.io/en/devel/)
+For more details, see:
+[py_trees_ros documentation](https://py-trees-ros.readthedocs.io/en/devel/)
+[py_trees documentation](https://py-trees.readthedocs.io/en/devel/)
+[py_trees_ros_tutorials documentation](https://py-trees-ros-tutorials.readthedocs.io/en/devel/)
