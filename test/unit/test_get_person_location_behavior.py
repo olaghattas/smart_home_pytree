@@ -4,30 +4,45 @@ from smart_home_pytree.behaviors.get_person_location import GetPersonLocation
 from smart_home_pytree.registry import load_locations_to_blackboard
 import os
 
-class RobotInterface:
+class RobotInterface_:
     def __init__(self, state):
         self.state = state
 
-@pytest.fixture(scope="module")
-def setup_blackboard():
-    """Fixture to load the house locations into the blackboard."""
-    # yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
-    yaml_file_path = os.getenv("house_yaml_path", None) 
-    load_locations_to_blackboard(yaml_file_path)
+# def setup_module(module):
+    
+#     print('\nsetup_module()')
+#     """Reset the py_trees blackboard before each test automatically."""
+    
+#     # global blackboard
+#     global blackboard
+    
+#     blackboard = py_trees.blackboard.Blackboard()
+#     blackboard.storage.clear()
+        
+#     """Fixture to load the house locations into the blackboard."""
+#     # yaml_file_path = "/home/olagh48652/smart_home_pytree_ws/src/smart_home_pytree/config/house_info.yaml"
+#     yaml_file_path = os.getenv("house_yaml_path", None) 
+#     load_locations_to_blackboard(yaml_file_path)
+#     blackboard = py_trees.blackboard.Blackboard()
+    
+def setup_function(function):
+    print('\nsetup_function()')
+    global blackboard
+    
     blackboard = py_trees.blackboard.Blackboard()
-    return blackboard
-
-
-def test_person_location_valid(setup_blackboard):
+    blackboard.storage.clear()
+    yaml_file_path = os.getenv("house_yaml_path", None) 
+    load_locations_to_blackboard(yaml_file_path)    
+        
+def test_person_location_valid():
     """Test when the person location is a valid room."""
-    blackboard = setup_blackboard
     target_location = blackboard.get("locations")
     loc = "kitchen"
 
     # Simulate blackboard and state
     blackboard.set("person_location", loc)
     state = {"person_location": loc}
-    robot_interface = RobotInterface(state)
+    robot_interface = RobotInterface_(state)
 
     # Run GetPersonLocation
     get_person_loc = GetPersonLocation(robot_interface)
@@ -38,13 +53,12 @@ def test_person_location_valid(setup_blackboard):
     assert status == py_trees.common.Status.SUCCESS
 
 
-def test_person_location_not_registered(setup_blackboard):
+def test_person_location_not_registered():
     """Test when the location is not in the registered house locations."""
-    blackboard = setup_blackboard
     loc = "garage"  # Not in YAML
     state = {"person_location": loc}
 
-    robot_interface = RobotInterface(state)
+    robot_interface = RobotInterface_(state)
     
     blackboard.set("person_location", loc)
     get_person_loc = GetPersonLocation(robot_interface)
@@ -56,7 +70,7 @@ def test_person_location_not_registered(setup_blackboard):
 def test_person_location_none():
     """Test when the person location is None."""
     state = {"person_location": None}
-    robot_interface = RobotInterface(state)
+    robot_interface = RobotInterface_(state)
     
     get_person_loc = GetPersonLocation(robot_interface)
     status = get_person_loc.update()
@@ -67,7 +81,7 @@ def test_person_location_none():
 def test_person_location_missing_key():
     """Test when the state dictionary does not contain the key 'person_location'."""
     state = {}  # Missing key
-    robot_interface = RobotInterface(state)
+    robot_interface = RobotInterface_(state)
     
     get_person_loc = GetPersonLocation(robot_interface)
     status = get_person_loc.update()

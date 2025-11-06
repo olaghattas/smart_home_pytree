@@ -30,7 +30,7 @@ def setup_module(module):
     
     if not rclpy.ok():
         rclpy.init(args=None)
-    
+        
     robot_interface = RobotInterface()
     
 def teardown_module(module):
@@ -42,6 +42,10 @@ def teardown_module(module):
     rclpy.shutdown()
     
 def setup_function(function):
+    
+    blackboard = py_trees.blackboard.Blackboard()
+    blackboard.storage.clear()
+    
     yaml_file_path = os.getenv("house_yaml_path", None) 
     load_protocols_to_bb(yaml_file_path)
     print('\nsetup_function()')
@@ -130,7 +134,7 @@ def test_read_script_only_runs_in_same_location():
     runner_thread.join(timeout=100)
     
     ## since charging is false
-    assert mock_undock_server.triggered
+    assert not mock_undock_server.triggered
     assert mock_nav_server.triggered, "Expected navigation to be triggered"
     assert mock_dock_server.triggered, "Expected docking to be triggered"
     
@@ -241,7 +245,7 @@ def test_read_script_shouldnt_run_in_diff_location():
     assert mock_nav_server.triggered, "Expected navigation to be triggered"
     # assert mock_dock_server.result_status == "succeeded"
 
-    assert not mock_dock_server.triggered, "Expected docking to not be triggered"
+    assert not mock_dock_server.triggered, "Expected docking not to be triggered"
     # assert robot_interface.state.get('charging') is True, "Robot should not be charging"
     
     ## assert all keys corresponding to protocol passed

@@ -13,36 +13,54 @@ locations:
     y: -1.4
     quat: [0.0, 0.0, 1.0, 0.0]
 
-## need to be integerated 
+## need to be integerated to have robot interface get its info 
 person_location_topic: "person_location"
 robot_location_topic: "robot_location"
 
 protocols:
   TwoReminderProtocol:
     medicine_am:
-      first_text: "please take your morning medicine"
-      second_text: "This is the second reminder to take your morning medicine"
-      wait_time_between_reminders: 5
+      low_level:
+        first_text: "please take your morning medicine"
+        second_text: "This is the second reminder to take your morning medicine"
+        wait_time_between_reminders: 5
+      high_level:
+        priority: 2
+        requirements: 
+          time: {'from': '10:00', 'to': '11:00'}
+
     medicine_pm:
-      first_text: "please take your night medicine"
-      second_text: "This is the second reminder to take your night medicine"
-      wait_time_between_reminders: 5
+      low_level:
+        first_text: "please take your night medicine"
+        second_text: "This is the second reminder to take your night medicine"
+        wait_time_between_reminders: 5
+      high_level: 
+        priority: 2
+        requirements: 
+          time: {'from': '22:00', 'to': '23:00'}
+## add topics with /
+  CoffeeProtocol:
+    coffee:
+      low_level:
+        first_text: "please clean the dishes"
+      high_level:
+        priority: 3
+        requirements: 
+          event: 
+            - {'topic': '/coffee', 'value': True}
+            - {'topic': '/coffee_pot', 'value': True}
+          time: {'from': '09:00', 'to': '13:00'}
 
-  # Version2TwoReminderProtocol:
-  #   medicine_am:
-  #     first_reminder:
-  #       type: script
-  #       data: "please take your morning medicine"
-  #     second_reminder:
-  #       type: audio
-  #       data: "/home/olagh48652/smart-home/src/smart-home-robot/shr_resources/resources/food_reminder.mp3"
-
-  #   medicine_pm:
-  #     first_reminder:
-  #       type: script
-  #       data: "please take your night medicine"
-  #     second_reminder:
-  #       type: audio
-  #       data: "/home/olagh48652/smart-home/src/smart-home-robot/shr_resources/resources/food_reminder.mp3"
-
-
+    # coffee:
+    #   low_level:
+    #     first_text: "please clean the dishes"
+    #     second_text: "This is the second reminder to clean the dishes"
+    #     third_text: "Final reminder: please clean the dishes"
+    #     wait_time_between_reminders: 5
+    #   high_level:
+    #     priority: 3
+    #     requirements: 
+    #       event: 
+    #         - {'topic': '/coffee', 'value': True}
+    #         - {'topic': '/coffee_pot', 'value': True}
+    #       time: {'from': '09:00', 'to': '13:00'}

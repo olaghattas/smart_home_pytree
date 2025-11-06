@@ -31,6 +31,8 @@ def setup_module(module):
     if not rclpy.ok():
         rclpy.init(args=None)
     
+
+    
     robot_interface = RobotInterface()
     
 def teardown_module(module):
@@ -42,6 +44,9 @@ def teardown_module(module):
     rclpy.shutdown()
     
 def setup_function(function):
+    blackboard = py_trees.blackboard.Blackboard()
+    blackboard.storage.clear()
+    
     yaml_file_path = os.getenv("house_yaml_path", None) 
     load_protocols_to_bb(yaml_file_path)
     print('\nsetup_function()')
@@ -51,7 +56,6 @@ def teardown_function(function):
 
 def test_two_reminder_success():
     blackboard = py_trees.blackboard.Blackboard()
-    
     
     # Setup mock navigation server
     mock_nav_server = BaseMockActionServer(
@@ -282,4 +286,4 @@ def test_two_reminder_stops_midway_and_resumes_correctly():
     tree_runner_2.cleanup()
 
       
-# ~/smart_home_pytree_ws/src/smart_home_pytree: run  python3 -m  pytest test/unit/test_read_script_tree.py -vv
+# ~/smart_home_pytree_ws/src/smart_home_pytree: run  python3 -m  pytest test/unit/test_two_reminder_protocol_tree.py -vv

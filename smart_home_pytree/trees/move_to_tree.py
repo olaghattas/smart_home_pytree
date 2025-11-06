@@ -137,9 +137,6 @@ def main(args=None):
 
     args, unknown = parser.parse_known_args()
 
-   
-
-
     # Print all active threads
     # import threading
     # print("Active threads before running:")

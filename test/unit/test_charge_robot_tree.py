@@ -22,7 +22,6 @@ robot_interface = None
 
 def setup_module(module):
     print('\nsetup_module()')
-    
     # global executor, executor_thread, mock_nav_server, mock_undock_server
     global robot_interface
     
@@ -30,6 +29,7 @@ def setup_module(module):
         rclpy.init(args=None)
         
     robot_interface = RobotInterface()
+        
     
 def teardown_module(module):
     print('teardown_module()')
@@ -41,6 +41,10 @@ def teardown_module(module):
     
 def setup_function(function):
     print('\nsetup_function()')
+    
+    """Reset the py_trees blackboard before each test automatically."""
+    blackboard = py_trees.blackboard.Blackboard()
+    blackboard.storage.clear()
 
 def teardown_function(function):
     print('\nteardown_function()')

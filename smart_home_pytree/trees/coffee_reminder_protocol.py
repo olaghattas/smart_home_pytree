@@ -15,13 +15,15 @@ import yaml
 import argparse
 
 from smart_home_pytree.trees.read_script_tree import ReadScriptTree
-from smart_home_pytree.registry import load_protocols_to_bb
+from smart_home_pytree.registry import load_locations_to_blackboard, load_protocols_to_bb
 from smart_home_pytree.behaviors.check_protocol_bb import CheckProtocolBB
 
-class TwoReminderProtocolTree(BaseTreeRunner):      
+
+class CoffeeReminderProtocolTree(BaseTreeRunner):      
     def __init__(self, node_name: str, robot_interface=None, **kwargs):
         """
-        Initialize the TwoReminderProtocol.
+        Initialize the CoffeeReminderProtocol.
+        currently on reminder protocol
 
         Args:
             node_name (str): name of the ROS node.
@@ -35,9 +37,9 @@ class TwoReminderProtocolTree(BaseTreeRunner):
     
     def create_tree(self) -> py_trees.behaviour.Behaviour:
         """
-        Creates the TwoReminderProtocol tree:
+        Creates the CoffeeReminderProtocol tree:
         Sequence:
-            MoveToPersonLocation -> ReadScript -> ChargeRobot -> Wait -> MoveToPersonLocation -> PlayAudio -> ChargeRobot
+            MoveToPersonLocation -> ReadScript -> ChargeRobot
 
         Returns:
             the root of the tree
@@ -46,7 +48,7 @@ class TwoReminderProtocolTree(BaseTreeRunner):
         protocol_name = self.kwargs.get("protocol_name", "")
    
         if protocol_name  == "":
-            raise ValueError("protocol_name is empty. Please specify one (e.g., 'medicine_am').")
+            raise ValueError("protocol_name is empty. Please specify one (e.g., 'coffee').")
         
         # Conditional wrappers
         text_1 = "first_text"
@@ -57,33 +59,19 @@ class TwoReminderProtocolTree(BaseTreeRunner):
             expected_value=True,
         )
         
-        wait_time_key = "wait_time_between_reminders"
         read_script_tree_1 = ReadScriptTree(node_name=f"{self.node_name}_read_first_script", robot_interface=self.robot_interface)
-        read_script_reminder_1 = read_script_tree_1.create_tree(protocol_name=protocol_name,text_number=text_1, wait_time_key=wait_time_key)
+        read_script_reminder_1 = read_script_tree_1.create_tree(protocol_name=protocol_name,text_number=text_1)
         
         read_script_1_with_check.add_children([condition_1, read_script_reminder_1])
-        
-        text_2 = "second_text"
-        read_script_2_with_check = py_trees.composites.Selector("Run Second Script if needed", memory=True)
-        condition_2 = CheckProtocolBB(
-            name="Should Run Second Script?",
-            key=f"{protocol_name}_done.{text_2}_done",
-            expected_value=True,
-        )
-        
-        read_script_tree_2 = ReadScriptTree(node_name=f"{self.node_name}_read_second_script", robot_interface=self.robot_interface)
-        read_script_reminder_2 = read_script_tree_2.create_tree(protocol_name=protocol_name,text_number=text_2) ## dont want to wait after second script
-        read_script_2_with_check.add_children([condition_2, read_script_reminder_2])
         
         # # play_audio = play_audio.PlayAudio(name="play_audio", file="food_reminder.mp3")
 
         # Root sequence
-        root_sequence = py_trees.composites.Sequence(name="TwoReminderSequence", memory=True)
+        root_sequence = py_trees.composites.Sequence(name="CoffeeReminder", memory=True)
 
         # Add behaviors in order
         root_sequence.add_children([
             read_script_1_with_check,
-            read_script_2_with_check,
         ])
 
         return root_sequence
@@ -117,28 +105,10 @@ def main(args=None):
     
     blackboard = py_trees.blackboard.Blackboard()
     
-    ## test loading and removing from blackboard
-    # load_protocol_info_from_bb(yaml_path, protocol_name)
-    
-    # print("\n Blackboard updated:")
-    # print(f"  first_text: {blackboard.get('first_text')}")
-    # print(f"  second_text: {blackboard.get('second_text')}")
-
-    # remove_protocol_info_from_bb(yaml_path, protocol_name)
-    # try:
-    #     print("\n Blackboard updated:")
-    #     print(f"  first_text: {blackboard.get('first_text')}")
-    #     print(f"  second_text: {blackboard.get('second_text')}")
-    # except:
-    #     print("not in blackboard")
-    ## finish loading and removing from blackboard
-    
-    # done in base class 
-    # load_locations_to_blackboard(yaml_file_path)
     load_protocols_to_bb(yaml_file_path)
     
-    tree_runner = TwoReminderProtocolTree(
-        node_name="two_reminder_protocol_tree",
+    tree_runner = CoffeeReminderProtocolTree(
+        node_name="Coffee_Reminder_Protocol_Tree",
         protocol_name=protocol_name,
     )
     tree_runner.setup()

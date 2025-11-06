@@ -78,6 +78,14 @@ Each test focuses on testing a specific tree or behavior.
 
 From the package root `~/smart_home_pytree_ws/src/smart_home_pytree`:
 
+To run all the tests at once:
+
+```bash
+python3 -m pytest test/unit -vv
+```
+But currently this doesnt work correctly due to ros startup and teardown. working on a fix
+ 
+To run one test at a time:
 ```bash
 python3 -m pytest test/unit/test_move_to_person_location_tree.py -vv
 ```

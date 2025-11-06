@@ -62,7 +62,7 @@ def load_protocols_to_bb(yaml_path: str):
         data = yaml.safe_load(file)
         
        # Ensure structure is correct
-    if "protocols" not in data or "TwoReminderProtocol" not in data["protocols"]:
+    if "protocols" not in data:
         raise KeyError("YAML must contain protocols -> TwoReminderProtocol structure.")
     
     protocols = data["protocols"]
@@ -73,7 +73,7 @@ def load_protocols_to_bb(yaml_path: str):
             print("protocol name : ", protocol_name)
             protocol_dict = {}
             protocol_dict_done = {}
-            for key, value in protocols[protocol_type][protocol_name].items():
+            for key, value in protocols[protocol_type][protocol_name]["low_level"].items():
                 print(key, value)
                 protocol_dict[key] = value
                 protocol_dict_done[f"{key}_done"] = False

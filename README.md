@@ -1,5 +1,7 @@
 # Smart Home Pytree
 
+This project is being developed at and for the University of New Hampshire’s [Cognitive Assistive Robotics Lab](https://github.com/AssistiveRoboticsUNH) under NIH support.  
+
 ## Setup
 
 ``` 
@@ -14,6 +16,7 @@ git clone https://github.com/olaghattas/smart_home_pytree
 
 cd ~/smart_home_pytree_ws 
 colcon build --symlink-install
+source install/setup.bash
 
 the yaml file to be used that contains information about the house should be stored as an env variable under 
 ** house_yaml_path**
@@ -205,6 +208,33 @@ options:
 
 for testing you can use a simple GUI for testing topics is available in:  
 `test/gui_for_testing.py`  
+
+## Saving Protocol Info into BlackBoard
+
+Each protocol is uniquely identified by its name. When loaded, its configuration is stored on the Blackboard, using the protocol’s name as the key and its associated data (from the YAML) as the value.
+
+Accessing Protocol Data
+1. Get a Blackboard instance:
+```blackboard = py_trees.blackboard.Blackboard()```
+
+2. Retrieve your protocol’s data:
+Set protocol_name to the unique name defined in your YAML (e.g., medicine_am):
+
+  ```protocol_info = blackboard.get(protocol_name)```
+
+3. Use the stored values:
+
+For example, if your YAML defines:
+
+medicine_am:
+  low_level:
+    first_text: "please take your morning medicine"
+    second_text: "This is the second reminder to take your morning medicine"
+    wait_time_between_reminders: 5
+
+You can access any field like this:
+```text = protocol_info["first_text"]```
+
 
 ## Video of Running the Tree
 

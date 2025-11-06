@@ -4,12 +4,10 @@ import py_trees
 import py_trees_ros.trees
 import py_trees.console as console
 import rclpy
-import sys
 from py_trees import display
 
 # from smart_home_pytree.robot_interface
 from smart_home_pytree.registry import load_locations_to_blackboard
-import threading
 
 # to use the parametrs with a tree that inherits from this
 # MoveToLocationTree("move_to_tree", x=-0.56, y=0.60, quat=my_quat)

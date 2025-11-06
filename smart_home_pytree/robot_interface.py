@@ -72,8 +72,10 @@ class RobotInterface(Node):
         self.create_subscription(String, 'robot_location', self.robot_location_callback, 10)
         self.create_subscription(String, 'person_location', self.person_location_callback, 10)
         self.create_subscription(Bool, 'charging', self.charging_callback, 10)
-        self.create_subscription(Bool, 'protocol_1', self.protocol_1_callback, 10)
-        self.create_subscription(Bool, 'protocol_2', self.protocol_2_callback, 10)
+        
+        ## subcription for protocol events
+        self.create_subscription(Bool, 'coffee', self.coffee_callback, 10)
+        self.create_subscription(Bool, 'coffee_pot', self.coffee_pot_callback, 10)
 
         # Background spinning thread
         self._stop_event = threading.Event()
@@ -82,7 +84,7 @@ class RobotInterface(Node):
 
         self._initialized = True
         self.get_logger().info("RobotInterface initialized and spinning in background thread.")
-
+        
     # --- Spinning ---
     def _spin_background(self):
         while rclpy.ok() and not self._stop_event.is_set():
@@ -109,13 +111,13 @@ class RobotInterface(Node):
         self.get_logger().debug(f"Charging: {msg.data}")
         self.state.update('charging', msg.data)
         
-    def protocol_1_callback(self, msg):
-        self.get_logger().debug(f"protocol_1 : {msg.data}")
-        self.state.update('protocol_1', msg.data)
+    def coffee_callback(self, msg):
+        self.get_logger().debug(f"coffee : {msg.data}")
+        self.state.update('coffee', msg.data)
     
-    def protocol_2_callback(self, msg):
-        self.get_logger().debug(f"protocol_2: {msg.data}")
-        self.state.update('protocol_2', msg.data)
+    def coffee_pot_callback(self, msg):
+        self.get_logger().debug(f"coffee_pot: {msg.data}")
+        self.state.update('coffee_pot', msg.data)
 
 
 def get_robot_interface():

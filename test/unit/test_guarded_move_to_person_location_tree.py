@@ -28,7 +28,7 @@ def setup_module(module):
     
     if not rclpy.ok():
         rclpy.init(args=None)
-        
+    
     robot_interface = RobotInterface()
     
 def teardown_module(module):
@@ -41,6 +41,8 @@ def teardown_module(module):
     
 def setup_function(function):
     print('\nsetup_function()')
+    blackboard = py_trees.blackboard.Blackboard()
+    blackboard.storage.clear()
 
 def teardown_function(function):
     print('\nteardown_function()')

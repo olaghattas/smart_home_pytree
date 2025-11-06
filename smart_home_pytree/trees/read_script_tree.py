@@ -49,7 +49,7 @@ class ReadScriptTree(BaseTreeRunner):
         text_number: str = None,
         wait_time_key: str = None) -> py_trees.behaviour.Behaviour:
         """
-        Creates the TwoReminderProtocol tree:
+        Creates the ReadScriptTree tree:
         Sequence:
             MoveToPersonLocation -> ReadScript -> ChargeRobot -> Wait (optional)
         
@@ -57,28 +57,16 @@ class ReadScriptTree(BaseTreeRunner):
             protocol_name (str): which protocol does this read script belong to (same name as in yaml)
             text_number: which text to read (ex:first_text or second_text) has to be same as in yaml and part of the protoocl
             wait_time: how long should the robot wait after charging (default: 0.0s)
-            ex yaml:
-            
-            medicine_am:
-                first_text: "please take your morning medicine"
-                second_text: "This is the second reminder to take your morning medicine"
-                
-            medicine_pm:
-                first_text: "please take your night medicine"
-                second_text: "This is the second reminder to take your night medicine"
 
         Returns:
             the root of the tree
         """
         
         blackboard = py_trees.blackboard.Blackboard()
-        protocol_info = blackboard.get(protocol_name)
         
         # If __init__ already defines values, they take priority.
-        print("self.protocol_name: ", self.protocol_name)
-        print("protocol_name: ", protocol_name)
         protocol_name = protocol_name or self.protocol_name
-        print("protocol_name: ", protocol_name)
+        protocol_info = blackboard.get(protocol_name)
 
         text_number = text_number or self.text_number 
         text = protocol_info[text_number]
@@ -143,9 +131,9 @@ def str2bool(v):
 import os
 def main(args=None):    
     parser = argparse.ArgumentParser(
-        description="""Two Reminder Protocol Tree 
+        description="""Read Script  Tree 
         
-        Handles Playing the Two Reminder Protocol:
+        Handles Playing the Reading Script logic where robot and personneed to be in the same location before script is read:
         1. Retries up to num_attempts times if needed
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
