@@ -20,6 +20,7 @@ robot_location_topic: "robot_location"
 protocols:
   TwoReminderProtocol:
     medicine_am:
+      permissible_locations: TO BE INCORPORATED
       low_level:
         first_text: "please take your morning medicine"
         second_text: "This is the second reminder to take your morning medicine"
