@@ -45,7 +45,7 @@ def main():
 # Use generic main to run the server
 # ----------------------------
 if __name__ == "__main__":
-    run_action_server(DockingActionServer)  
+    main()
     
     
 ## this works

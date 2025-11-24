@@ -18,6 +18,8 @@ from smart_home_pytree.trees.play_audio_tree import PlayAudioTree
 from smart_home_pytree.trees.read_script_tree import ReadScriptTree
 from smart_home_pytree.registry import load_protocols_to_bb
 from smart_home_pytree.behaviors.check_protocol_bb import CheckProtocolBB
+from shr_msgs.action import PlayVideoRequest
+import py_trees_ros
 
 def make_reminder_tree(reminder_type: str,
                 node_name: str,
@@ -42,7 +44,17 @@ def make_reminder_tree(reminder_type: str,
         return tree.create_tree(protocol_name=protocol_name,
                                 data_key=data_key,
                                 wait_time_key=wait_time_key)
-
+        
+    elif  reminder_type == "video":
+        video_goal = PlayVideoRequest.Goal()
+        
+        return py_trees_ros.actions.ActionClient(
+            name="Dock_Robot",
+            action_type=PlayVideoRequest,
+            action_name="play_video",
+            action_goal=video_goal,
+            wait_for_server_timeout_sec=120.0
+        )
     else:
         raise ValueError(f"Unknown reminder type: {reminder_type} available types are text, audio, video, question_answer ")
     
