@@ -73,10 +73,18 @@ def load_protocols_to_bb(yaml_path: str):
             print("protocol name : ", protocol_name)
             protocol_dict = {}
             protocol_dict_done = {}
-            for key, value in protocols[protocol_type][protocol_name]["low_level"].items():
+            
+            low_level = protocols[protocol_type][protocol_name]["low_level"]
+            for key, value in low_level.items():
                 print(key, value)
                 protocol_dict[key] = value
+                
+                if key.startswith("type_"):
+                # Skip creating *_done entry
+                    continue
+                
                 protocol_dict_done[f"{key}_done"] = False
+                    
             blackboard.set(protocol_name, protocol_dict)
             blackboard.set(f"{protocol_name}_done", protocol_dict_done)
     

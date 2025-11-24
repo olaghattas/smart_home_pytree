@@ -1,4 +1,5 @@
 import os
+import os
 import yaml
 import time
 import random
@@ -135,7 +136,7 @@ class TriggerMonitor:
 
 # PROTOCOL ORCHESTRATOR 
 class ProtocolOrchestrator:
-    def __init__(self, robot_interface = None, test_time=None,  signal_safe: bool = False):
+    def __init__(self, robot_interface = None, test_time=None):
         # rclpy.init()
         self.rclpy_initialized_here = False
 
@@ -150,8 +151,6 @@ class ProtocolOrchestrator:
                 self.rclpy_initialized_here = False
                 print(" self.rclpy_initialized_here shoul;d be false: ", self.rclpy_initialized_here)
 
-
-        self.signal_safe = signal_safe
         
         if  robot_interface is None:
             print("initialize robot interface")
@@ -275,7 +274,7 @@ class ProtocolOrchestrator:
             print(f"[Orchestrator] No matching tree for {protocol_name}")
             return
 
-        tree_runner.setup(signal_safe=self.signal_safe)
+        tree_runner.setup()
         thread = threading.Thread(
             target=self._run_protocol,
             args=(tree_runner, protocol_name, priority),

@@ -49,7 +49,7 @@ class TwoReminderProtocolTree(BaseTreeRunner):
             raise ValueError("protocol_name is empty. Please specify one (e.g., 'medicine_am').")
         
         # Conditional wrappers
-        text_1 = "first_text"
+        text_1 = "first_reminder"
         read_script_1_with_check = py_trees.composites.Selector("Run First Script if needed", memory=True)
         condition_1 = CheckProtocolBB(
             name="Should Run First Script?",
@@ -63,7 +63,7 @@ class TwoReminderProtocolTree(BaseTreeRunner):
         
         read_script_1_with_check.add_children([condition_1, read_script_reminder_1])
         
-        text_2 = "second_text"
+        text_2 = "second_reminder"
         read_script_2_with_check = py_trees.composites.Selector("Run Second Script if needed", memory=True)
         condition_2 = CheckProtocolBB(
             name="Should Run Second Script?",

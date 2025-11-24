@@ -3,6 +3,7 @@ from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from std_msgs.msg import String, Bool
 import threading
+from std_msgs.msg import String
 
 class RobotState:
     """Thread-safe singleton state container."""
@@ -71,12 +72,14 @@ class RobotInterface(Node):
         # Subscriptions
         self.create_subscription(String, 'robot_location', self.robot_location_callback, 10)
         self.create_subscription(String, 'person_location', self.person_location_callback, 10)
-        self.create_subscription(Bool, 'charging', self.charging_callback, 10)
+        
         
         ## subcription for protocol events
         self.create_subscription(Bool, 'coffee', self.coffee_callback, 10)
         self.create_subscription(Bool, 'coffee_pot', self.coffee_pot_callback, 10)
+        self.create_subscription(Bool, 'charging', self.charging_callback, 10)
 
+        self.create_subscription(String, 'sim_time', self.sim_time_callback, 10)
         # Background spinning thread
         self._stop_event = threading.Event()
         self.spin_thread = threading.Thread(target=self._spin_background, daemon=True)
@@ -84,7 +87,9 @@ class RobotInterface(Node):
 
         self._initialized = True
         self.get_logger().info("RobotInterface initialized and spinning in background thread.")
-        
+    
+    
+    
     # --- Spinning ---
     def _spin_background(self):
         while rclpy.ok() and not self._stop_event.is_set():
@@ -119,7 +124,12 @@ class RobotInterface(Node):
         self.get_logger().debug(f"coffee_pot: {msg.data}")
         self.state.update('coffee_pot', msg.data)
 
+    def sim_time_callback(self, msg: String):
+        self.get_logger().debug(f"Simulated time: {msg.data}")
+        # Example: msg.data = "10:30"
+        self.state["sim_time"] = msg.data
 
+## ros2 topic pub /sim_time std_msgs/msg/String "{data: '10:30'}"
 def get_robot_interface():
     if not rclpy.ok():
         rclpy.init()
