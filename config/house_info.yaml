@@ -24,10 +24,10 @@ protocols:
     medicine_am:
       permissible_locations: TO BE INCORPORATED
       low_level:
-        first_reminder: "please take your morning medicine"
-        type_first: text
-        second_reminder: "This is the second reminder to take your morning medicine"
-        type_second: text
+        first_reminder: "/home/olagh48652/smart-home/src/smart-home-robot/shr_resources/resources/food_reminder.mp3" #"please take your morning medicine"
+        type_first: audio
+        second_reminder: "/home/olagh48652/smart-home/src/smart-home-robot/shr_resources/resources/food_reminder.mp3" #"This is the second reminder to take your morning medicine"
+        type_second: audio
         wait_time_between_reminders: 5
       high_level:
         priority: 2

@@ -209,6 +209,12 @@ options:
 for testing you can use a simple GUI for testing topics is available in:  
 `test/gui_for_testing.py`  
 
+### For Fast Debugging
+You can use the test_actions.py. the script creates action servers that give yes after some time. you can adjust the time in the script too. to run that use command in the ws directory: python3 src/smart_home_pytree/test/mock/test_actions.py 
+This runs the followign three action servers docking, undocking and navigate_to_pose
+
+for the topics use the gui_for_testing.py mentioned above.
+
 ## Saving Protocol Info into BlackBoard
 
 Each protocol is uniquely identified by its name. When loaded, its configuration is stored on the Blackboard, using the protocol’s name as the key and its associated data (from the YAML) as the value.

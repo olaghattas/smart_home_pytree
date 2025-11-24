@@ -15,38 +15,9 @@ import yaml
 import argparse
 
 from smart_home_pytree.trees.play_audio_tree import PlayAudioTree 
-from smart_home_pytree.trees.read_script_tree import ReadScriptTree
 from smart_home_pytree.registry import load_protocols_to_bb
 from smart_home_pytree.behaviors.check_protocol_bb import CheckProtocolBB
 
-def make_reminder_tree(reminder_type: str,
-                node_name: str,
-                robot_interface,
-                protocol_name: str,
-                data_key: str,
-                wait_time_key: str | None = None):
-    """
-    Returns a behavior tree subtree for the given reminder type.
-    """
-
-    if reminder_type == "text":
-        tree = ReadScriptTree(node_name=node_name,
-                                robot_interface=robot_interface)
-        return tree.create_tree(protocol_name=protocol_name,
-                                data_key=data_key,
-                                wait_time_key=wait_time_key)
-
-    elif reminder_type == "audio":
-        tree = PlayAudioTree(node_name=node_name,
-                                robot_interface=robot_interface)
-        return tree.create_tree(protocol_name=protocol_name,
-                                data_key=data_key,
-                                wait_time_key=wait_time_key)
-
-    else:
-        raise ValueError(f"Unknown reminder type: {reminder_type} available types are text, audio, video, question_answer ")
-    
-    
 class TwoReminderProtocolTree(BaseTreeRunner):      
     def __init__(self, node_name: str, robot_interface=None, **kwargs):
         """
@@ -73,72 +44,51 @@ class TwoReminderProtocolTree(BaseTreeRunner):
         """
         
         protocol_name = self.kwargs.get("protocol_name", "")
-        bb = py_trees.blackboard.Blackboard()
-        
-        # Extract the types
-        
-        print("protocol_name: ", protocol_name)
-        protocol_info = bb.get(protocol_name)
-
-        
-        type_1 = protocol_info["type_first"]
-        type_2 = protocol_info["type_second"]
-        wait_time_key = "wait_time_between_reminders"
-    
+   
         if protocol_name  == "":
             raise ValueError("protocol_name is empty. Please specify one (e.g., 'medicine_am').")
         
         # Conditional wrappers
         reminder_1 = "first_reminder"
-        first_selector = py_trees.composites.Selector("Run First Script if needed", memory=True)
+        play_audio_1_with_check = py_trees.composites.Selector("Run First Script if needed", memory=True)
         condition_1 = CheckProtocolBB(
             name="Should Run First Script?",
             key=f"{protocol_name}_done.{reminder_1}_done",
             expected_value=True,
         )
         
+        wait_time_key = "wait_time_between_reminders"
+        play_audio_tree_1 = PlayAudioTree(node_name=f"{self.node_name}_play_first_audio", robot_interface=self.robot_interface)
+        play_audio_reminder_1 = play_audio_tree_1.create_tree(protocol_name=protocol_name,data_key=reminder_1, wait_time_key=wait_time_key)
         
-        first_tree = make_reminder_tree(
-            reminder_type=type_1,
-            node_name=f"{self.node_name}_first",
-            robot_interface=self.robot_interface,
-            protocol_name=protocol_name,
-            data_key=reminder_1,
-            wait_time_key=wait_time_key  # only first needs wait
-        )
-        
-        first_selector.add_children([condition_1, first_tree])
+        play_audio_1_with_check.add_children([condition_1, play_audio_reminder_1])
         
         reminder_2 = "second_reminder"
-        second_selector = py_trees.composites.Selector("Run Second Script if needed", memory=True)
+        play_audio_2_with_check = py_trees.composites.Selector("Run Second Script if needed", memory=True)
         condition_2 = CheckProtocolBB(
             name="Should Run Second Script?",
             key=f"{protocol_name}_done.{reminder_2}_done",
             expected_value=True,
         )
         
-        second_tree =  make_reminder_tree(
-            reminder_type=type_2,
-            node_name=f"{self.node_name}_second",
-            robot_interface=self.robot_interface,
-            protocol_name=protocol_name,
-            data_key=reminder_2,
-        )
+        play_audio_tree_2 = PlayAudioTree(node_name=f"{self.node_name}_play_second_audio", robot_interface=self.robot_interface)
+        play_audio_reminder_2 = play_audio_tree_2.create_tree(protocol_name=protocol_name,data_key=reminder_2) ## dont want to wait after second script
+        play_audio_2_with_check.add_children([condition_2, play_audio_reminder_2])
         
-        second_selector.add_children([condition_2, second_tree])
-        
+        # # play_audio = play_audio.PlayAudio(name="play_audio", file="food_reminder.mp3")
+
         # Root sequence
         root_sequence = py_trees.composites.Sequence(name="TwoReminderSequence", memory=True)
 
         # Add behaviors in order
         root_sequence.add_children([
-            first_selector,
-            second_selector,
+            play_audio_1_with_check,
+            play_audio_2_with_check,
         ])
 
         return root_sequence
     
-
+    
 def str2bool(v):
     return str(v).lower() in ('true', '1', 't', 'yes')
 
