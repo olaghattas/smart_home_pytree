@@ -5,7 +5,6 @@ This script is responsible for running the two reminder protocol.
 
 """
 
-
 import py_trees
 
 import rclpy
