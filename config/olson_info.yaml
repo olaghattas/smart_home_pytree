@@ -1,17 +1,32 @@
 ## store infromation needed for all protocols
+# locations:
+#   bedroom:
+#     x: -5.9
+#     y: 0.0
+#     quat: [0.0, 0.0,-0.7071, 0.7071]
+#   living_room:
+#     x: -2.0
+#     y: 1.4
+#     quat: [0.0, 0.0, 0.0, 1.0]
+#   home:
+#     x: 0.5
+#     y: 1.92
+#     quat: [0.0, 0.0, -0.7071, 0.7071]
 locations:
   bedroom:
     x: -5.9
     y: 0.0
-    quat: [0.0, 0.0,-0.7071, 0.7071]
+    yaw: -1.5708   # -90 degrees
+
   living_room:
     x: -2.0
     y: 1.4
-    quat: [0.0, 0.0, 0.0, 1.0]
+    yaw: 0.0       # facing forward
+
   home:
     x: 0.5
     y: 1.92
-    quat: [0.0, 0.0, -0.7071, 0.7071]
+    yaw: -1.5708   # -90 degrees
 
 ## need to be integerated 
 person_location_topic: "person_location"

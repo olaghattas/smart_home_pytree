@@ -5,7 +5,8 @@ import py_trees
 import operator
 
 from datetime import datetime
-
+import rclpy
+from rclpy.logging import LoggingSeverity
 
 """
 A logging behavior that prints the current time and a custom message. It takes status as input, if its reporting a failure it should return Failure or else the robot woud get success becasue 
@@ -22,6 +23,7 @@ class LoggingBehavior(py_trees.behaviour.Behaviour):
         super().__init__(name)
         self.message = message
         self.status = status
+        self.ros_logger = rclpy.logging.get_logger("py_trees_logger")
 
     def setup(self, **kwargs):
         """
@@ -47,6 +49,15 @@ class LoggingBehavior(py_trees.behaviour.Behaviour):
         # Alternatively, you can also print if you want console output:
         print(full_message)
 
+        # prepend the magic key
+        msg = f"weblog={full_message}"
+
+        # publish to rosout with magic word (which Discord node subscribes to)
+        self.ros_logger.log(
+            LoggingSeverity.INFO,
+            msg
+        )
+        
         return self.status
 
     def terminate(self, new_status):

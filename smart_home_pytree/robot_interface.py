@@ -4,6 +4,7 @@ from rclpy.executors import MultiThreadedExecutor
 from std_msgs.msg import String, Bool
 import threading
 from std_msgs.msg import String
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 class RobotState:
     """Thread-safe singleton state container."""
@@ -70,9 +71,9 @@ class RobotInterface(Node):
         self.state = RobotState()
         
         # Subscriptions
+        self.create_subscription(PoseWithCovarianceStamped, "/amcl_pose", self.amcl_callback, 10)
         self.create_subscription(String, 'robot_location', self.robot_location_callback, 10)
         self.create_subscription(String, 'person_location', self.person_location_callback, 10)
-        
         
         ## subcription for protocol events
         self.create_subscription(Bool, 'coffee', self.coffee_callback, 10)
@@ -87,9 +88,13 @@ class RobotInterface(Node):
 
         self._initialized = True
         self.get_logger().info("RobotInterface initialized and spinning in background thread.")
+        self.state.update('robot_location_xy', None)
     
-    
-    
+    def amcl_callback(self, msg):
+        x = msg.pose.pose.position.x
+        y = msg.pose.pose.position.y
+        self.state.update('robot_location_xy', (x,y))
+
     # --- Spinning ---
     def _spin_background(self):
         while rclpy.ok() and not self._stop_event.is_set():

@@ -6,6 +6,12 @@ from geometry_msgs.msg import PoseStamped, Quaternion
 from nav2_msgs.action import NavigateToPose
 import rclpy
 from rclpy.action import ActionClient
+import tf_transformations
+
+def yaw_to_quaternion(yaw):
+    # Convert yaw to quaternion (roll=0, pitch=0)
+    q = tf_transformations.quaternion_from_euler(0, 0, yaw)
+    return Quaternion(x=q[0], y=q[1], z=q[2], w=q[3])
 
 class MoveToLandmark(py_trees.behaviour.Behaviour):
     """
@@ -76,12 +82,9 @@ class MoveToLandmark(py_trees.behaviour.Behaviour):
         pose.header.frame_id = "map"
         pose.pose.position.x = target["x"]
         pose.pose.position.y = target["y"]
-        pose.pose.orientation = Quaternion(
-            x=target["quat"][0],
-            y=target["quat"][1],
-            z=target["quat"][2],
-            w=target["quat"][3]
-        )
+        yaw = target["yaw"]
+        quat = yaw_to_quaternion(yaw)
+        pose.pose.orientation = quat
 
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose = pose
